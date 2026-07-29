@@ -1,5 +1,5 @@
 # Base configs
-/photography1: "https://ajgamerx1.github.io/photography1"
+baseurl: "https://ajgamerx1.github.io/photography1"
 # baseurl: "" # Comment the above line and uncomment this to test the website locally
 image_fulls_loc: "/images/fulls"
 image_thumbs_loc: "/images/thumbs"
@@ -11,7 +11,7 @@ subtitle: "Share the perspective of a camera"
 author: "Anaiah Oliver"
 header:
  title: "Photography"
- subtitle: "by Ram Patra"
+ subtitle: "by Anaiah Oliver"
 footer:
  name: "Hey there, my name is Anaiah"
  bio: "learning photography"
