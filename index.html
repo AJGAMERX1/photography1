@@ -7,86 +7,56 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg: #faf9f6;
-    --bg-soft: #f2f0eb;
-    --ink: #1c1b19;
-    --ink-soft: #8a8680;
-    --line: #e3e0d9;
+  :root{ --bg:#faf9f6; --bg-soft:#f2f0eb; --ink:#1c1b19; --ink-soft:#8a8680; --line:#e3e0d9; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; min-height:100vh; padding-bottom:2rem; -webkit-font-smoothing:antialiased; }
+  header{ padding:6rem 7vw 2.5rem; position:relative; overflow:hidden; }
+  .geo-accent{ position:absolute; pointer-events:none; z-index:0; }
+  .geo-accent.top-right{ top:-2rem; right:3vw; width:260px; height:260px; }
+  header h1, header .sub{ position:relative; z-index:1; }
+  h1{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(2.4rem,5vw,3.6rem); letter-spacing:-0.01em; line-height:1.05; }
+  .sub{ font-size:0.92rem; color:var(--ink-soft); margin-top:0.9rem; letter-spacing:0.01em; }
+  .filter-bar{ display:flex; align-items:center; justify-content:space-between; gap:1.5rem; padding:0 7vw 2.2rem; border-bottom:1px solid var(--line); margin-bottom:3.5rem; flex-wrap:wrap; }
+  .filters-left{ display:flex; gap:2rem; flex-wrap:wrap; }
+  .filter-bar .count{ font-size:0.75rem; color:var(--ink-soft); letter-spacing:0.04em; text-transform:uppercase; }
+  .select-wrap{ position:relative; }
+  .cam-select, .theme-select{
+    appearance:none; -webkit-appearance:none;
+    font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:500; letter-spacing:0.03em; text-transform:uppercase;
+    color:var(--ink); background:transparent; border:none; border-bottom:1px solid var(--ink);
+    padding:0.5rem 2.2rem 0.5rem 0; cursor:pointer; min-width:150px; transition:opacity 0.15s ease;
   }
-  *{ box-sizing: border-box; margin:0; padding:0; }
-  body{
-    background: var(--bg);
-    color: var(--ink);
-    font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-    padding-bottom: 2rem;
-    -webkit-font-smoothing: antialiased;
+  .cam-select:hover, .theme-select:hover{ opacity:0.6; }
+  .cam-select:focus, .theme-select:focus{ outline:none; }
+  .select-wrap::after{
+    content:''; position:absolute; right:0.15rem; top:50%; width:6px; height:6px;
+    border-right:1px solid var(--ink); border-bottom:1px solid var(--ink);
+    transform:translateY(-70%) rotate(45deg); pointer-events:none;
   }
-  header{ padding: 6rem 7vw 2.5rem; position: relative; overflow: hidden; }
-  .geo-accent{ position: absolute; pointer-events: none; z-index: 0; }
-  .geo-accent.top-right{ top: -2rem; right: 3vw; width: 260px; height: 260px; }
-  header h1, header .sub{ position: relative; z-index: 1; }
-  h1{
-    font-family: 'Fraunces', serif;
-    font-weight: 400;
-    font-size: clamp(2.4rem, 5vw, 3.6rem);
-    letter-spacing: -0.01em;
-    line-height: 1.05;
-  }
-  .sub{ font-size: 0.92rem; color: var(--ink-soft); margin-top: 0.9rem; letter-spacing: 0.01em; }
-  .filter-bar{
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 1rem; padding: 0 7vw 2.2rem; border-bottom: 1px solid var(--line);
-    margin-bottom: 3.5rem; flex-wrap: wrap;
-  }
-  .filter-bar .count{ font-size: 0.75rem; color: var(--ink-soft); letter-spacing: 0.04em; text-transform: uppercase; }
-  .camera-select-wrap{ position: relative; }
-  .camera-select{
-    appearance: none; -webkit-appearance: none;
-    font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 500;
-    letter-spacing: 0.03em; text-transform: uppercase; color: var(--ink);
-    background: transparent; border: none; border-bottom: 1px solid var(--ink);
-    padding: 0.5rem 2.2rem 0.5rem 0; cursor: pointer; min-width: 170px;
-    transition: opacity 0.15s ease;
-  }
-  .camera-select:hover{ opacity: 0.6; }
-  .camera-select:focus{ outline: none; }
-  .camera-select-wrap::after{
-    content: ''; position: absolute; right: 0.15rem; top: 50%;
-    width: 6px; height: 6px; border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink);
-    transform: translateY(-70%) rotate(45deg); pointer-events: none;
-  }
-  .grid{ columns: 3 260px; column-gap: 2.4rem; padding: 0 7vw; }
-  @media (max-width: 720px){ .grid{ columns: 2 150px; column-gap: 1.2rem; } }
-  .frame{ break-inside: avoid; margin-bottom: 2.4rem; cursor: zoom-in; position: relative; background: var(--bg-soft); }
-  .frame.hidden{ display: none; }
-  .frame img{ display: block; width: 100%; height: auto; filter: saturate(0.97); transition: opacity 0.25s ease; }
-  .frame:hover img{ opacity: 0.9; }
-  .frame .caption{ display: flex; justify-content: space-between; align-items: baseline; margin-top: 0.8rem; padding-bottom: 0.2rem; }
-  .frame .label{ font-family: 'Fraunces', serif; font-size: 0.95rem; font-weight: 400; color: var(--ink); }
-  .frame .cam-tag{ font-size: 0.65rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; margin-left: 1rem; }
-  .empty-state{ padding: 5rem 7vw; text-align: center; color: var(--ink-soft); font-family: 'Fraunces', serif; font-size: 1.1rem; display: none; }
-  .empty-state.show{ display: block; }
-  .backdrop{
-    position: fixed; inset: 0; background: rgba(250,249,246,0.96);
-    display: none; align-items: center; justify-content: center;
-    z-index: 50; padding: 8vh 6vw; cursor: zoom-out;
-  }
-  .backdrop.open{ display: flex; }
-  .enlarged{
-    max-width: 76vw; max-height: 82vh; display: flex; flex-direction: column;
-    align-items: center; cursor: default; animation: rise 0.3s cubic-bezier(.2,.8,.2,1);
-  }
-  @keyframes rise{ from{ opacity:0; transform: translateY(10px); } to{ opacity:1; transform: translateY(0); } }
-  .enlarged img{ max-width: 100%; max-height: 68vh; object-fit: contain; box-shadow: 0 25px 60px rgba(28,27,25,0.1); }
-  .meta{ margin-top: 1.4rem; font-family: 'Fraunces', serif; font-size: 1.05rem; color: var(--ink); text-align: center; }
-  .meta .cam{ display: block; font-family: 'Inter', sans-serif; font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); margin-top: 0.4rem; }
-  .close-hint{ font-size: 0.68rem; letter-spacing: 0.03em; color: var(--ink-soft); margin-top: 0.7rem; }
-  footer.site-footer{ position: relative; overflow: hidden; padding: 5rem 7vw 3rem; margin-top: 4rem; }
-  .geo-accent.bottom-left{ bottom: -3rem; left: 2vw; width: 320px; height: 220px; }
-  .geo-accent.bottom-right{ bottom: -1rem; right: 4vw; width: 160px; height: 160px; }
-  footer.site-footer .foot-label{ position: relative; z-index: 1; font-family: 'Fraunces', serif; font-size: 0.95rem; color: var(--ink-soft); }
+  .grid{ columns:3 260px; column-gap:2.4rem; padding:0 7vw; }
+  @media (max-width:720px){ .grid{ columns:2 150px; column-gap:1.2rem; } }
+  .frame{ break-inside:avoid; margin-bottom:2.4rem; cursor:zoom-in; position:relative; background:var(--bg-soft); }
+  .frame.hidden{ display:none; }
+  .frame img{ display:block; width:100%; height:auto; filter:saturate(0.97); transition:opacity 0.25s ease; }
+  .frame:hover img{ opacity:0.9; }
+  .frame .caption{ display:flex; justify-content:space-between; align-items:baseline; margin-top:0.8rem; padding-bottom:0.2rem; }
+  .frame .label{ font-family:'Fraunces',serif; font-size:0.95rem; font-weight:400; color:var(--ink); }
+  .frame .tags{ font-size:0.63rem; letter-spacing:0.05em; text-transform:uppercase; color:var(--ink-soft); white-space:nowrap; margin-left:1rem; text-align:right; }
+  .frame .tags span{ display:block; }
+  .empty-state{ padding:5rem 7vw; text-align:center; color:var(--ink-soft); font-family:'Fraunces',serif; font-size:1.1rem; display:none; }
+  .empty-state.show{ display:block; }
+  .backdrop{ position:fixed; inset:0; background:rgba(250,249,246,0.97); display:none; align-items:center; justify-content:center; z-index:50; padding:4vh 3vw; cursor:zoom-out; }
+  .backdrop.open{ display:flex; }
+  .enlarged{ max-width:92vw; max-height:92vh; display:flex; flex-direction:column; align-items:center; cursor:default; animation:rise 0.3s cubic-bezier(.2,.8,.2,1); }
+  @keyframes rise{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:translateY(0);} }
+  .enlarged img{ max-width:100%; max-height:84vh; object-fit:contain; box-shadow:0 25px 60px rgba(28,27,25,0.12); }
+  .meta{ margin-top:1.2rem; font-family:'Fraunces',serif; font-size:1.05rem; color:var(--ink); text-align:center; }
+  .meta .tags{ display:block; font-family:'Inter',sans-serif; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase; color:var(--ink-soft); margin-top:0.4rem; }
+  .close-hint{ font-size:0.68rem; letter-spacing:0.03em; color:var(--ink-soft); margin-top:0.6rem; }
+  footer.site-footer{ position:relative; overflow:hidden; padding:5rem 7vw 3rem; margin-top:4rem; }
+  .geo-accent.bottom-left{ bottom:-3rem; left:2vw; width:320px; height:220px; }
+  .geo-accent.bottom-right{ bottom:-1rem; right:4vw; width:160px; height:160px; }
+  footer.site-footer .foot-label{ position:relative; z-index:1; font-family:'Fraunces',serif; font-size:0.95rem; color:var(--ink-soft); }
 </style>
 </head>
 <body>
@@ -104,20 +74,28 @@
 </header>
 
 <div class="filter-bar">
-  <div class="camera-select-wrap">
-    <select class="camera-select" id="cameraFilter">
-      <option value="all">All Cameras</option>
-      <option value="r6ii">Canon R6 Mark II</option>
-      <option value="7d">Canon 7D</option>
-      <option value="g7x">PowerShot G7 X Mark II</option>
-      <option value="unknown">Unknown</option>
-    </select>
+  <div class="filters-left">
+    <div class="select-wrap">
+      <select class="cam-select" id="cameraFilter">
+        <option value="all">All Cameras</option>
+        <option value="r6ii">Canon R6 Mark II</option>
+        <option value="7d">Canon 7D</option>
+        <option value="g7x">PowerShot G7 X Mark II</option>
+      </select>
+    </div>
+    <div class="select-wrap">
+      <select class="theme-select" id="themeFilter">
+        <option value="all">All Themes</option>
+      <option value="flowers">Flowers</option>
+      <option value="skies">Skies</option>
+      <option value="street">Street</option>      </select>
+    </div>
   </div>
   <div class="count" id="count"></div>
 </div>
 
 <div class="grid" id="grid"></div>
-<div class="empty-state" id="emptyState">No photos shot on this camera yet.</div>
+<div class="empty-state" id="emptyState">No photos match that combination yet.</div>
 
 <footer class="site-footer">
   <svg class="geo-accent bottom-left" viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg">
@@ -143,79 +121,42 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/exif-js@2.3.0/exif.js"></script>
 <script>
-  const CAMERA_LABEL = { r6ii: 'Canon R6 Mark II', '7d': 'Canon 7D', g7x: 'PowerShot G7 X Mark II', unknown: 'Unknown Camera' };
-
-  // Maps raw EXIF "Model" strings to our camera keys. Add more substrings here if a match fails.
-  function mapModelToKey(model){
-    if(!model) return 'unknown';
-    const m = model.toUpperCase();
-    if(m.includes('R6')) return 'r6ii';
-    if(m.includes('7D')) return '7d';
-    if(m.includes('G7 X') || m.includes('G7X')) return 'g7x';
-    return 'unknown';
-  }
+  const CAMERA_LABEL = { r6ii: 'Canon R6 Mark II', '7d': 'Canon 7D', g7x: 'PowerShot G7 X Mark II' };
 
   const photos = [
-    { thumb: 'images/thumbs/799A3891.jpg', full: 'images/fulls/799A3891.jpg', label: '799A3891', cam: 'unknown' },
-    { thumb: 'images/thumbs/799A4020.jpg', full: 'images/fulls/799A4020.jpg', label: '799A4020', cam: 'unknown' },
-    { thumb: 'images/thumbs/799A4022-3.jpg', full: 'images/fulls/799A4022-3.jpg', label: '799A4022-3', cam: 'unknown' },
-    { thumb: 'images/thumbs/799A4022.jpg', full: 'images/fulls/799A4022.jpg', label: '799A4022', cam: 'unknown' },
-    { thumb: 'images/thumbs/799A4035.jpg', full: 'images/fulls/799A4035.jpg', label: '799A4035', cam: 'unknown' },
-    { thumb: 'images/thumbs/799A4037.jpg', full: 'images/fulls/799A4037.jpg', label: '799A4037', cam: 'unknown' },
-    { thumb: 'images/thumbs/799A4046.jpg', full: 'images/fulls/799A4046.jpg', label: '799A4046', cam: 'unknown' },
-    { thumb: 'images/thumbs/799A4050.jpg', full: 'images/fulls/799A4050.jpg', label: '799A4050', cam: 'unknown' },
-    { thumb: 'images/thumbs/799A4051.jpg', full: 'images/fulls/799A4051.jpg', label: '799A4051', cam: 'unknown' },
-    { thumb: 'images/thumbs/IMG_2579-3.jpg', full: 'images/fulls/IMG_2579-3.jpg', label: 'IMG_2579-3', cam: 'unknown' },
-    { thumb: 'images/thumbs/IMG_2591.jpg', full: 'images/fulls/IMG_2591.jpg', label: 'IMG_2591', cam: 'unknown' },
-    { thumb: 'images/thumbs/IMG_2626.jpg', full: 'images/fulls/IMG_2626.jpg', label: 'IMG_2626', cam: 'unknown' },
-    { thumb: 'images/thumbs/IMG_2630-3.jpg', full: 'images/fulls/IMG_2630-3.jpg', label: 'IMG_2630-3', cam: 'unknown' },
-    { thumb: 'images/thumbs/IMG_2630.jpg', full: 'images/fulls/IMG_2630.jpg', label: 'IMG_2630', cam: 'unknown' },
-    { thumb: 'images/thumbs/IMG_2703.jpg', full: 'images/fulls/IMG_2703.jpg', label: 'IMG_2703', cam: 'unknown' },
-    { thumb: 'images/thumbs/IMG_2736.jpg', full: 'images/fulls/IMG_2736.jpg', label: 'IMG_2736', cam: 'unknown' },
-    { thumb: 'images/thumbs/IMG_2740.jpg', full: 'images/fulls/IMG_2740.jpg', label: 'IMG_2740', cam: 'unknown' },
-    { thumb: 'images/thumbs/IMG_2742.jpg', full: 'images/fulls/IMG_2742.jpg', label: 'IMG_2742', cam: 'unknown' },
-    { thumb: 'images/thumbs/IMG_2747.jpg', full: 'images/fulls/IMG_2747.jpg', label: 'IMG_2747', cam: 'unknown' },
-    { thumb: 'images/thumbs/IMG_2748.jpg', full: 'images/fulls/IMG_2748.jpg', label: 'IMG_2748', cam: 'unknown' },
-    { thumb: 'images/thumbs/IMG_2752.jpg', full: 'images/fulls/IMG_2752.jpg', label: 'IMG_2752', cam: 'unknown' },
-    { thumb: 'images/thumbs/IMG_8631.jpg', full: 'images/fulls/IMG_8631.jpg', label: 'IMG_8631', cam: 'unknown' },
-    { thumb: 'images/thumbs/MG_7871.jpg', full: 'images/fulls/MG_7871.jpg', label: 'MG_7871', cam: 'unknown' },
-    { thumb: 'images/thumbs/MG_7971.jpg', full: 'images/fulls/MG_7971.jpg', label: 'MG_7971', cam: 'unknown' },
-    { thumb: 'images/thumbs/MG_7972.jpg', full: 'images/fulls/MG_7972.jpg', label: 'MG_7972', cam: 'unknown' },
-    { thumb: 'images/thumbs/MG_8007.jpg', full: 'images/fulls/MG_8007.jpg', label: 'MG_8007', cam: 'unknown' },
-    { thumb: 'images/thumbs/MG_8043.jpg', full: 'images/fulls/MG_8043.jpg', label: 'MG_8043', cam: 'unknown' },
-    { thumb: 'images/thumbs/MG_8060-spektrafilm-001-2.jpg', full: 'images/fulls/MG_8060-spektrafilm-001-2.jpg', label: 'MG_8060-spektrafilm-001-2', cam: 'unknown' },
-    { thumb: 'images/thumbs/MG_8081.jpg', full: 'images/fulls/MG_8081.jpg', label: 'MG_8081', cam: 'unknown' },
-    { thumb: 'images/thumbs/MG_8084.jpg', full: 'images/fulls/MG_8084.jpg', label: 'MG_8084', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_7851.jpg', full: 'images/fulls/_MG_7851.jpg', label: '_MG_7851', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_7871.jpg', full: 'images/fulls/_MG_7871.jpg', label: '_MG_7871', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_7890.jpg', full: 'images/fulls/_MG_7890.jpg', label: '_MG_7890', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_7897.jpg', full: 'images/fulls/_MG_7897.jpg', label: '_MG_7897', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_7917.jpg', full: 'images/fulls/_MG_7917.jpg', label: '_MG_7917', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_7920.jpg', full: 'images/fulls/_MG_7920.jpg', label: '_MG_7920', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_7952.jpg', full: 'images/fulls/_MG_7952.jpg', label: '_MG_7952', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_7966-2.jpg', full: 'images/fulls/_MG_7966-2.jpg', label: '_MG_7966-2', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_7971.jpg', full: 'images/fulls/_MG_7971.jpg', label: '_MG_7971', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_7972.jpg', full: 'images/fulls/_MG_7972.jpg', label: '_MG_7972', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_7992.jpg', full: 'images/fulls/_MG_7992.jpg', label: '_MG_7992', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8007.jpg', full: 'images/fulls/_MG_8007.jpg', label: '_MG_8007', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8027.jpg', full: 'images/fulls/_MG_8027.jpg', label: '_MG_8027', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8034.jpg', full: 'images/fulls/_MG_8034.jpg', label: '_MG_8034', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8043.jpg', full: 'images/fulls/_MG_8043.jpg', label: '_MG_8043', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8060-spektrafilm-001-2.jpg', full: 'images/fulls/_MG_8060-spektrafilm-001-2.jpg', label: '_MG_8060-spektrafilm-001-2', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8062-2.jpg', full: 'images/fulls/_MG_8062-2.jpg', label: '_MG_8062-2', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8081.jpg', full: 'images/fulls/_MG_8081.jpg', label: '_MG_8081', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8084.jpg', full: 'images/fulls/_MG_8084.jpg', label: '_MG_8084', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8103-2.jpg', full: 'images/fulls/_MG_8103-2.jpg', label: '_MG_8103-2', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8114.jpg', full: 'images/fulls/_MG_8114.jpg', label: '_MG_8114', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8127-2.jpg', full: 'images/fulls/_MG_8127-2.jpg', label: '_MG_8127-2', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8127.jpg', full: 'images/fulls/_MG_8127.jpg', label: '_MG_8127', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8165.jpg', full: 'images/fulls/_MG_8165.jpg', label: '_MG_8165', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8188.jpg', full: 'images/fulls/_MG_8188.jpg', label: '_MG_8188', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8190.jpg', full: 'images/fulls/_MG_8190.jpg', label: '_MG_8190', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8193.jpg', full: 'images/fulls/_MG_8193.jpg', label: '_MG_8193', cam: 'unknown' },
-    { thumb: 'images/thumbs/_MG_8399.jpg', full: 'images/fulls/_MG_8399.jpg', label: '_MG_8399', cam: 'unknown' },
+    { thumb: 'images/thumbs/7d/flowers/_MG_7851.jpg', full: 'images/fulls/7d/flowers/_MG_7851.jpg', label: '_MG_7851', cam: '7d', theme: 'flowers' },
+    { thumb: 'images/thumbs/7d/flowers/_MG_7917.jpg', full: 'images/fulls/7d/flowers/_MG_7917.jpg', label: '_MG_7917', cam: '7d', theme: 'flowers' },
+    { thumb: 'images/thumbs/7d/flowers/_MG_7920.jpg', full: 'images/fulls/7d/flowers/_MG_7920.jpg', label: '_MG_7920', cam: '7d', theme: 'flowers' },
+    { thumb: 'images/thumbs/7d/flowers/_MG_7966-2.jpg', full: 'images/fulls/7d/flowers/_MG_7966-2.jpg', label: '_MG_7966-2', cam: '7d', theme: 'flowers' },
+    { thumb: 'images/thumbs/7d/flowers/_MG_7971.jpg', full: 'images/fulls/7d/flowers/_MG_7971.jpg', label: '_MG_7971', cam: '7d', theme: 'flowers' },
+    { thumb: 'images/thumbs/7d/flowers/_MG_7972-2.jpg', full: 'images/fulls/7d/flowers/_MG_7972-2.jpg', label: '_MG_7972-2', cam: '7d', theme: 'flowers' },
+    { thumb: 'images/thumbs/7d/flowers/_MG_8034.jpg', full: 'images/fulls/7d/flowers/_MG_8034.jpg', label: '_MG_8034', cam: '7d', theme: 'flowers' },
+    { thumb: 'images/thumbs/7d/flowers/_MG_8060-spektrafilm-001-2.jpg', full: 'images/fulls/7d/flowers/_MG_8060-spektrafilm-001-2.jpg', label: '_MG_8060-spektrafilm-001-2', cam: '7d', theme: 'flowers' },
+    { thumb: 'images/thumbs/7d/flowers/_MG_8062-2.jpg', full: 'images/fulls/7d/flowers/_MG_8062-2.jpg', label: '_MG_8062-2', cam: '7d', theme: 'flowers' },
+    { thumb: 'images/thumbs/7d/flowers/_MG_8399.jpg', full: 'images/fulls/7d/flowers/_MG_8399.jpg', label: '_MG_8399', cam: '7d', theme: 'flowers' },
+    { thumb: 'images/thumbs/7d/skies/_MG_8081.jpg', full: 'images/fulls/7d/skies/_MG_8081.jpg', label: '_MG_8081', cam: '7d', theme: 'skies' },
+    { thumb: 'images/thumbs/7d/skies/_MG_8084.jpg', full: 'images/fulls/7d/skies/_MG_8084.jpg', label: '_MG_8084', cam: '7d', theme: 'skies' },
+    { thumb: 'images/thumbs/7d/skies/_MG_8103-2.jpg', full: 'images/fulls/7d/skies/_MG_8103-2.jpg', label: '_MG_8103-2', cam: '7d', theme: 'skies' },
+    { thumb: 'images/thumbs/7d/skies/_MG_8114.jpg', full: 'images/fulls/7d/skies/_MG_8114.jpg', label: '_MG_8114', cam: '7d', theme: 'skies' },
+    { thumb: 'images/thumbs/7d/skies/_MG_8127.jpg', full: 'images/fulls/7d/skies/_MG_8127.jpg', label: '_MG_8127', cam: '7d', theme: 'skies' },
+    { thumb: 'images/thumbs/7d/street/_MG_7952.jpg', full: 'images/fulls/7d/street/_MG_7952.jpg', label: '_MG_7952', cam: '7d', theme: 'street' },
+    { thumb: 'images/thumbs/7d/street/_MG_8007.jpg', full: 'images/fulls/7d/street/_MG_8007.jpg', label: '_MG_8007', cam: '7d', theme: 'street' },
+    { thumb: 'images/thumbs/7d/street/_MG_8188.jpg', full: 'images/fulls/7d/street/_MG_8188.jpg', label: '_MG_8188', cam: '7d', theme: 'street' },
+    { thumb: 'images/thumbs/7d/street/_MG_8193.jpg', full: 'images/fulls/7d/street/_MG_8193.jpg', label: '_MG_8193', cam: '7d', theme: 'street' },
+    { thumb: 'images/thumbs/g7x/flowers/IMG_2553.jpg', full: 'images/fulls/g7x/flowers/IMG_2553.jpg', label: 'IMG_2553', cam: 'g7x', theme: 'flowers' },
+    { thumb: 'images/thumbs/g7x/skies/IMG_2579-3.jpg', full: 'images/fulls/g7x/skies/IMG_2579-3.jpg', label: 'IMG_2579-3', cam: 'g7x', theme: 'skies' },
+    { thumb: 'images/thumbs/g7x/skies/IMG_2590-spektrafilm-001.jpg', full: 'images/fulls/g7x/skies/IMG_2590-spektrafilm-001.jpg', label: 'IMG_2590-spektrafilm-001', cam: 'g7x', theme: 'skies' },
+    { thumb: 'images/thumbs/g7x/street/799A3891.jpg', full: 'images/fulls/g7x/street/799A3891.jpg', label: '799A3891', cam: 'g7x', theme: 'street' },
+    { thumb: 'images/thumbs/g7x/street/IMG_2520-2.jpg', full: 'images/fulls/g7x/street/IMG_2520-2.jpg', label: 'IMG_2520-2', cam: 'g7x', theme: 'street' },
+    { thumb: 'images/thumbs/g7x/street/IMG_2703.jpg', full: 'images/fulls/g7x/street/IMG_2703.jpg', label: 'IMG_2703', cam: 'g7x', theme: 'street' },
+    { thumb: 'images/thumbs/g7x/street/IMG_2736.jpg', full: 'images/fulls/g7x/street/IMG_2736.jpg', label: 'IMG_2736', cam: 'g7x', theme: 'street' },
+    { thumb: 'images/thumbs/g7x/street/IMG_2740.jpg', full: 'images/fulls/g7x/street/IMG_2740.jpg', label: 'IMG_2740', cam: 'g7x', theme: 'street' },
+    { thumb: 'images/thumbs/g7x/street/IMG_2752.jpg', full: 'images/fulls/g7x/street/IMG_2752.jpg', label: 'IMG_2752', cam: 'g7x', theme: 'street' },
+    { thumb: 'images/thumbs/r6ii/flowers/799A4022-3.jpg', full: 'images/fulls/r6ii/flowers/799A4022-3.jpg', label: '799A4022-3', cam: 'r6ii', theme: 'flowers' },
+    { thumb: 'images/thumbs/r6ii/flowers/799A4022.jpg', full: 'images/fulls/r6ii/flowers/799A4022.jpg', label: '799A4022', cam: 'r6ii', theme: 'flowers' },
+    { thumb: 'images/thumbs/r6ii/flowers/799A4046.jpg', full: 'images/fulls/r6ii/flowers/799A4046.jpg', label: '799A4046', cam: 'r6ii', theme: 'flowers' },
+    { thumb: 'images/thumbs/r6ii/flowers/799A4051.jpg', full: 'images/fulls/r6ii/flowers/799A4051.jpg', label: '799A4051', cam: 'r6ii', theme: 'flowers' },
   ];
 
   const grid = document.getElementById('grid');
@@ -224,12 +165,16 @@
   const backdrop = document.getElementById('backdrop');
   const enlargedImg = document.getElementById('enlargedImg');
   const metaEl = document.getElementById('meta');
-  const select = document.getElementById('cameraFilter');
+  const camSelect = document.getElementById('cameraFilter');
+  const themeSelect = document.getElementById('themeFilter');
 
   function render(){
     grid.innerHTML = '';
-    const val = select.value;
-    const visible = val === 'all' ? photos : photos.filter(p => p.cam === val);
+    const cam = camSelect.value;
+    const theme = themeSelect.value;
+    const visible = photos.filter(p =>
+      (cam === 'all' || p.cam === cam) && (theme === 'all' || p.theme === theme)
+    );
 
     visible.forEach(p => {
       const div = document.createElement('div');
@@ -238,7 +183,7 @@
         <img src="${p.thumb}" alt="${p.label}" loading="lazy">
         <div class="caption">
           <span class="label">${p.label}</span>
-          <span class="cam-tag">${CAMERA_LABEL[p.cam]}</span>
+          <span class="tags"><span>${CAMERA_LABEL[p.cam] || p.cam}</span><span>${p.theme}</span></span>
         </div>
       `;
       div.addEventListener('click', () => openEnlarged(p));
@@ -252,38 +197,16 @@
   function openEnlarged(p){
     enlargedImg.src = p.full;
     enlargedImg.alt = p.label;
-    metaEl.innerHTML = `${p.label}<span class="cam">${CAMERA_LABEL[p.cam]}</span>`;
+    metaEl.innerHTML = `${p.label}<span class="tags">${CAMERA_LABEL[p.cam] || p.cam} — ${p.theme}</span>`;
     backdrop.classList.add('open');
   }
 
   backdrop.addEventListener('click', () => backdrop.classList.remove('open'));
   document.addEventListener('keydown', e => { if(e.key === 'Escape') backdrop.classList.remove('open'); });
-  select.addEventListener('change', render);
-
-  // Read real EXIF camera model for every photo in the background, then re-render.
-  function loadExifData(){
-    let remaining = photos.length;
-    photos.forEach(p => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = function(){
-        EXIF.getData(img, function(){
-          const model = EXIF.getTag(this, 'Model');
-          p.cam = mapModelToKey(model);
-          remaining--;
-          if(remaining === 0) render();
-        });
-      };
-      img.onerror = function(){
-        remaining--;
-        if(remaining === 0) render();
-      };
-      img.src = p.thumb;
-    });
-  }
+  camSelect.addEventListener('change', render);
+  themeSelect.addEventListener('change', render);
 
   render();
-  loadExifData();
 </script>
 
 </body>
