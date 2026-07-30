@@ -23,11 +23,7 @@
     padding-bottom: 2rem;
     -webkit-font-smoothing: antialiased;
   }
-  header{
-    padding: 6rem 7vw 2.5rem;
-    position: relative;
-    overflow: hidden;
-  }
+  header{ padding: 6rem 7vw 2.5rem; position: relative; overflow: hidden; }
   .geo-accent{ position: absolute; pointer-events: none; z-index: 0; }
   .geo-accent.top-right{ top: -2rem; right: 3vw; width: 260px; height: 260px; }
   header h1, header .sub{ position: relative; z-index: 1; }
@@ -114,7 +110,7 @@
       <option value="r6ii">Canon R6 Mark II</option>
       <option value="7d">Canon 7D</option>
       <option value="g7x">PowerShot G7 X Mark II</option>
-      <option value="unassigned">Unassigned</option>
+      <option value="unknown">Unknown</option>
     </select>
   </div>
   <div class="count" id="count"></div>
@@ -147,24 +143,34 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/exif-js@2.3.0/exif.js"></script>
 <script>
-  const CAMERA_LABEL = { r6ii: 'Canon R6 Mark II', '7d': 'Canon 7D', g7x: 'PowerShot G7 X Mark II', unassigned: 'Camera Unknown' };
+  const CAMERA_LABEL = { r6ii: 'Canon R6 Mark II', '7d': 'Canon 7D', g7x: 'PowerShot G7 X Mark II', unknown: 'Unknown Camera' };
 
-  // EDIT ME: swap 'cam' values once you know which photo used which camera
+  // Maps raw EXIF "Model" strings to our camera keys. Add more substrings here if a match fails.
+  function mapModelToKey(model){
+    if(!model) return 'unknown';
+    const m = model.toUpperCase();
+    if(m.includes('R6')) return 'r6ii';
+    if(m.includes('7D')) return '7d';
+    if(m.includes('G7 X') || m.includes('G7X')) return 'g7x';
+    return 'unknown';
+  }
+
   const photos = [
-    { thumb: 'images/thumbs/799A4020.jpg', full: 'images/fulls/799A4020.jpg', cam: 'unassigned', label: '799A4020' },
-    { thumb: 'images/thumbs/799A4022.jpg', full: 'images/fulls/799A4022.jpg', cam: 'unassigned', label: '799A4022' },
-    { thumb: 'images/thumbs/799A4051.jpg', full: 'images/fulls/799A4051.jpg', cam: 'unassigned', label: '799A4051' },
-    { thumb: 'images/thumbs/IMG_2579.jpg', full: 'images/fulls/IMG_2579.jpg', cam: 'unassigned', label: 'IMG_2579' },
-    { thumb: 'images/thumbs/IMG_2591.jpg', full: 'images/fulls/IMG_2591.jpg', cam: 'unassigned', label: 'IMG_2591' },
-    { thumb: 'images/thumbs/MG_7871.jpg', full: 'images/fulls/MG_7871.jpg', cam: 'unassigned', label: 'MG_7871' },
-    { thumb: 'images/thumbs/MG_7971.jpg', full: 'images/fulls/MG_7971.jpg', cam: 'unassigned', label: 'MG_7971' },
-    { thumb: 'images/thumbs/MG_7972.jpg', full: 'images/fulls/MG_7972.jpg', cam: 'unassigned', label: 'MG_7972' },
-    { thumb: 'images/thumbs/MG_8007.jpg', full: 'images/fulls/MG_8007.jpg', cam: 'unassigned', label: 'MG_8007' },
-    { thumb: 'images/thumbs/MG_8043.jpg', full: 'images/fulls/MG_8043.jpg', cam: 'unassigned', label: 'MG_8043' },
-    { thumb: 'images/thumbs/MG_8060-spektrafilm-001-2.jpg', full: 'images/fulls/MG_8060-spektrafilm-001-2.jpg', cam: 'unassigned', label: 'MG_8060' },
-    { thumb: 'images/thumbs/MG_8081.jpg', full: 'images/fulls/MG_8081.jpg', cam: 'unassigned', label: 'MG_8081' },
-    { thumb: 'images/thumbs/MG_8084.jpg', full: 'images/fulls/MG_8084.jpg', cam: 'unassigned', label: 'MG_8084' },
+    { thumb: 'images/thumbs/799A4020.jpg', full: 'images/fulls/799A4020.jpg', label: '799A4020', cam: 'unknown' },
+    { thumb: 'images/thumbs/799A4022.jpg', full: 'images/fulls/799A4022.jpg', label: '799A4022', cam: 'unknown' },
+    { thumb: 'images/thumbs/799A4051.jpg', full: 'images/fulls/799A4051.jpg', label: '799A4051', cam: 'unknown' },
+    { thumb: 'images/thumbs/IMG_2579.jpg', full: 'images/fulls/IMG_2579.jpg', label: 'IMG_2579', cam: 'unknown' },
+    { thumb: 'images/thumbs/IMG_2591.jpg', full: 'images/fulls/IMG_2591.jpg', label: 'IMG_2591', cam: 'unknown' },
+    { thumb: 'images/thumbs/MG_7871.jpg', full: 'images/fulls/MG_7871.jpg', label: 'MG_7871', cam: 'unknown' },
+    { thumb: 'images/thumbs/MG_7971.jpg', full: 'images/fulls/MG_7971.jpg', label: 'MG_7971', cam: 'unknown' },
+    { thumb: 'images/thumbs/MG_7972.jpg', full: 'images/fulls/MG_7972.jpg', label: 'MG_7972', cam: 'unknown' },
+    { thumb: 'images/thumbs/MG_8007.jpg', full: 'images/fulls/MG_8007.jpg', label: 'MG_8007', cam: 'unknown' },
+    { thumb: 'images/thumbs/MG_8043.jpg', full: 'images/fulls/MG_8043.jpg', label: 'MG_8043', cam: 'unknown' },
+    { thumb: 'images/thumbs/MG_8060-spektrafilm-001-2.jpg', full: 'images/fulls/MG_8060-spektrafilm-001-2.jpg', label: 'MG_8060', cam: 'unknown' },
+    { thumb: 'images/thumbs/MG_8081.jpg', full: 'images/fulls/MG_8081.jpg', label: 'MG_8081', cam: 'unknown' },
+    { thumb: 'images/thumbs/MG_8084.jpg', full: 'images/fulls/MG_8084.jpg', label: 'MG_8084', cam: 'unknown' },
   ];
 
   const grid = document.getElementById('grid');
@@ -209,9 +215,31 @@
   document.addEventListener('keydown', e => { if(e.key === 'Escape') backdrop.classList.remove('open'); });
   select.addEventListener('change', render);
 
+  // Read real EXIF camera model for every photo in the background, then re-render.
+  function loadExifData(){
+    let remaining = photos.length;
+    photos.forEach(p => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function(){
+        EXIF.getData(img, function(){
+          const model = EXIF.getTag(this, 'Model');
+          p.cam = mapModelToKey(model);
+          remaining--;
+          if(remaining === 0) render();
+        });
+      };
+      img.onerror = function(){
+        remaining--;
+        if(remaining === 0) render();
+      };
+      img.src = p.thumb;
+    });
+  }
+
   render();
+  loadExifData();
 </script>
 
 </body>
 </html>
-EOF</parameter>
