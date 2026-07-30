@@ -1,94 +1,217 @@
----
-layout: default
----
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photography by Anaiah Oliver</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #faf9f6;
+    --bg-soft: #f2f0eb;
+    --ink: #1c1b19;
+    --ink-soft: #8a8680;
+    --line: #e3e0d9;
+  }
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 2rem;
+    -webkit-font-smoothing: antialiased;
+  }
+  header{
+    padding: 6rem 7vw 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .geo-accent{ position: absolute; pointer-events: none; z-index: 0; }
+  .geo-accent.top-right{ top: -2rem; right: 3vw; width: 260px; height: 260px; }
+  header h1, header .sub{ position: relative; z-index: 1; }
+  h1{
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: clamp(2.4rem, 5vw, 3.6rem);
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+  }
+  .sub{ font-size: 0.92rem; color: var(--ink-soft); margin-top: 0.9rem; letter-spacing: 0.01em; }
+  .filter-bar{
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; padding: 0 7vw 2.2rem; border-bottom: 1px solid var(--line);
+    margin-bottom: 3.5rem; flex-wrap: wrap;
+  }
+  .filter-bar .count{ font-size: 0.75rem; color: var(--ink-soft); letter-spacing: 0.04em; text-transform: uppercase; }
+  .camera-select-wrap{ position: relative; }
+  .camera-select{
+    appearance: none; -webkit-appearance: none;
+    font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 500;
+    letter-spacing: 0.03em; text-transform: uppercase; color: var(--ink);
+    background: transparent; border: none; border-bottom: 1px solid var(--ink);
+    padding: 0.5rem 2.2rem 0.5rem 0; cursor: pointer; min-width: 170px;
+    transition: opacity 0.15s ease;
+  }
+  .camera-select:hover{ opacity: 0.6; }
+  .camera-select:focus{ outline: none; }
+  .camera-select-wrap::after{
+    content: ''; position: absolute; right: 0.15rem; top: 50%;
+    width: 6px; height: 6px; border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink);
+    transform: translateY(-70%) rotate(45deg); pointer-events: none;
+  }
+  .grid{ columns: 3 260px; column-gap: 2.4rem; padding: 0 7vw; }
+  @media (max-width: 720px){ .grid{ columns: 2 150px; column-gap: 1.2rem; } }
+  .frame{ break-inside: avoid; margin-bottom: 2.4rem; cursor: zoom-in; position: relative; background: var(--bg-soft); }
+  .frame.hidden{ display: none; }
+  .frame img{ display: block; width: 100%; height: auto; filter: saturate(0.97); transition: opacity 0.25s ease; }
+  .frame:hover img{ opacity: 0.9; }
+  .frame .caption{ display: flex; justify-content: space-between; align-items: baseline; margin-top: 0.8rem; padding-bottom: 0.2rem; }
+  .frame .label{ font-family: 'Fraunces', serif; font-size: 0.95rem; font-weight: 400; color: var(--ink); }
+  .frame .cam-tag{ font-size: 0.65rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; margin-left: 1rem; }
+  .empty-state{ padding: 5rem 7vw; text-align: center; color: var(--ink-soft); font-family: 'Fraunces', serif; font-size: 1.1rem; display: none; }
+  .empty-state.show{ display: block; }
+  .backdrop{
+    position: fixed; inset: 0; background: rgba(250,249,246,0.96);
+    display: none; align-items: center; justify-content: center;
+    z-index: 50; padding: 8vh 6vw; cursor: zoom-out;
+  }
+  .backdrop.open{ display: flex; }
+  .enlarged{
+    max-width: 76vw; max-height: 82vh; display: flex; flex-direction: column;
+    align-items: center; cursor: default; animation: rise 0.3s cubic-bezier(.2,.8,.2,1);
+  }
+  @keyframes rise{ from{ opacity:0; transform: translateY(10px); } to{ opacity:1; transform: translateY(0); } }
+  .enlarged img{ max-width: 100%; max-height: 68vh; object-fit: contain; box-shadow: 0 25px 60px rgba(28,27,25,0.1); }
+  .meta{ margin-top: 1.4rem; font-family: 'Fraunces', serif; font-size: 1.05rem; color: var(--ink); text-align: center; }
+  .meta .cam{ display: block; font-family: 'Inter', sans-serif; font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); margin-top: 0.4rem; }
+  .close-hint{ font-size: 0.68rem; letter-spacing: 0.03em; color: var(--ink-soft); margin-top: 0.7rem; }
+  footer.site-footer{ position: relative; overflow: hidden; padding: 5rem 7vw 3rem; margin-top: 4rem; }
+  .geo-accent.bottom-left{ bottom: -3rem; left: 2vw; width: 320px; height: 220px; }
+  .geo-accent.bottom-right{ bottom: -1rem; right: 4vw; width: 160px; height: 160px; }
+  footer.site-footer .foot-label{ position: relative; z-index: 1; font-family: 'Fraunces', serif; font-size: 0.95rem; color: var(--ink-soft); }
+</style>
+</head>
+<body>
 
-<!-- Wrapper -->
-<div id="wrapper">
+<header>
+  <svg class="geo-accent top-right" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
+    <line x1="10" y1="250" x2="250" y2="10" stroke="#1c1b19" stroke-width="1" opacity="0.13"/>
+    <line x1="60" y1="250" x2="250" y2="60" stroke="#1c1b19" stroke-width="1" opacity="0.1"/>
+    <line x1="110" y1="250" x2="250" y2="110" stroke="#1c1b19" stroke-width="1" opacity="0.08"/>
+    <polygon points="250,10 250,90 170,10" fill="#1c1b19" opacity="0.05"/>
+    <circle cx="222" cy="38" r="3" fill="#1c1b19" opacity="0.35"/>
+  </svg>
+  <h1>Photography by Anaiah Oliver</h1>
+  <div class="sub">a running gallery, shot across three bodies</div>
+</header>
 
-    <!-- Header -->
-    <header id="header">
-        <h1><a href="index.html"><strong>{{ site.header.title }}</strong> {{ site.header.subtitle }}</a></h1>
-        <nav>
-            <ul>
-                <li><a href="#footer">About&nbsp;&nbsp;<i class="fa fa-info-circle text-fg"></i></a></li>
-            </ul>
-        </nav>
-    </header>
-
-    <!-- Main -->
-    <div id="main" data-exif='{{ site.exif }}'>
-        {% for image in site.static_files %}
-        {% if image.path contains 'fulls' %}
-        <article class="thumb">
-            <a href="{{ site.baseurl }}{{ site.image_fulls_loc }}/{{ image.name }}" class="image">
-                <img src="{{ site.baseurl }}{{ site.image_thumbs_loc }}/{{ image.name }}" alt=""
-                     data-name="{{ image.name }}"/></a>
-            <!--<h2></h2>
-            <p></p>-->
-        </article>
-        {% endif %}
-        {% endfor %}
-    </div>
-
-    <!-- Footer -->
-    <footer id="footer" class="panel">
-        <div class="inner split">
-            <div>
-                <section>
-                    <h2>{{ site.footer.name }}</h2>
-                    <p>{{ site.footer.bio }}</p>
-                </section>
-                <section>
-                    <h2>Follow me on ...</h2>
-                    <ul class="icons">
-                        {% if site.social_urls.facebook %}
-                            <li>
-                                <a href="{{ site.social_urls.facebook }}" class="icon brands fa-facebook">
-                                    <span class="label">Facebook</span>
-                                </a>
-                            </li>
-                        {% endif %}
-                        {% if site.social_urls.twitter %}
-                            <li>
-                                <a href="{{ site.social_urls.twitter }}" class="icon brands fa-twitter">
-                                    <span class="label">Twitter</span>
-                                </a>
-                            </li>
-                        {% endif %}
-                        {% if site.social_urls.instagram %}
-                            <li>
-                                <a href="{{ site.social_urls.instagram }}" class="icon brands fa-instagram">
-                                    <span class="label">Instagram</span>
-                                </a>
-                            </li>
-                        {% endif %}
-                        {% if site.social_urls.dribbble %}
-                            <li>
-                                <a href="{{ site.social_urls.dribbble }}" class="icon brands fa-dribbble">
-                                    <span class="label">Dribbble</span>
-                                </a>
-                            </li>
-                        {% endif %}
-                        {% if site.social_urls.github %}
-                            <li>
-                                <a href="{{ site.social_urls.github }}" class="icon brands fa-github">
-                                    <span class="label">GitHub</span>
-                                </a>
-                            </li>
-                        {% endif %}
-                        {% if site.social_urls.linkedin %}
-                            <li>
-                                <a href="{{ site.social_urls.linkedin }}" class="icon brands fa-linkedin">
-                                    <span class="label">LinkedIn</span>
-                                </a>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </section>
-                <p class="copyright">
-                    &copy; {{ site.author }}. Design: {{ site.web_design }}
-                </p>
-            </div>
-        </div>
-    </footer>
+<div class="filter-bar">
+  <div class="camera-select-wrap">
+    <select class="camera-select" id="cameraFilter">
+      <option value="all">All Cameras</option>
+      <option value="r6ii">Canon R6 Mark II</option>
+      <option value="7d">Canon 7D</option>
+      <option value="g7x">PowerShot G7 X Mark II</option>
+      <option value="unassigned">Unassigned</option>
+    </select>
+  </div>
+  <div class="count" id="count"></div>
 </div>
+
+<div class="grid" id="grid"></div>
+<div class="empty-state" id="emptyState">No photos shot on this camera yet.</div>
+
+<footer class="site-footer">
+  <svg class="geo-accent bottom-left" viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg">
+    <line x1="0" y1="0" x2="230" y2="220" stroke="#1c1b19" stroke-width="1" opacity="0.1"/>
+    <line x1="40" y1="0" x2="270" y2="220" stroke="#1c1b19" stroke-width="1" opacity="0.08"/>
+    <line x1="80" y1="0" x2="310" y2="220" stroke="#1c1b19" stroke-width="1" opacity="0.06"/>
+    <polygon points="0,220 0,140 80,220" fill="#1c1b19" opacity="0.05"/>
+    <circle cx="52" cy="188" r="3" fill="#1c1b19" opacity="0.3"/>
+  </svg>
+  <svg class="geo-accent bottom-right" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+    <line x1="160" y1="160" x2="20" y2="20" stroke="#1c1b19" stroke-width="1" opacity="0.12"/>
+    <line x1="160" y1="110" x2="70" y2="20" stroke="#1c1b19" stroke-width="1" opacity="0.09"/>
+    <polygon points="160,160 160,90 90,160" fill="#1c1b19" opacity="0.04"/>
+  </svg>
+  <div class="foot-label">Photography by Anaiah Oliver</div>
+</footer>
+
+<div class="backdrop" id="backdrop">
+  <div class="enlarged" id="enlargedBox">
+    <img id="enlargedImg" src="" alt="">
+    <div class="meta" id="meta"></div>
+    <div class="close-hint">click anywhere to close</div>
+  </div>
+</div>
+
+<script>
+  const CAMERA_LABEL = { r6ii: 'Canon R6 Mark II', '7d': 'Canon 7D', g7x: 'PowerShot G7 X Mark II', unassigned: 'Camera Unknown' };
+
+  // EDIT ME: swap 'cam' values once you know which photo used which camera
+  const photos = [
+    { thumb: 'images/thumbs/799A4020.jpg', full: 'images/fulls/799A4020.jpg', cam: 'unassigned', label: '799A4020' },
+    { thumb: 'images/thumbs/799A4022.jpg', full: 'images/fulls/799A4022.jpg', cam: 'unassigned', label: '799A4022' },
+    { thumb: 'images/thumbs/799A4051.jpg', full: 'images/fulls/799A4051.jpg', cam: 'unassigned', label: '799A4051' },
+    { thumb: 'images/thumbs/IMG_2579.jpg', full: 'images/fulls/IMG_2579.jpg', cam: 'unassigned', label: 'IMG_2579' },
+    { thumb: 'images/thumbs/IMG_2591.jpg', full: 'images/fulls/IMG_2591.jpg', cam: 'unassigned', label: 'IMG_2591' },
+    { thumb: 'images/thumbs/MG_7871.jpg', full: 'images/fulls/MG_7871.jpg', cam: 'unassigned', label: 'MG_7871' },
+    { thumb: 'images/thumbs/MG_7971.jpg', full: 'images/fulls/MG_7971.jpg', cam: 'unassigned', label: 'MG_7971' },
+    { thumb: 'images/thumbs/MG_7972.jpg', full: 'images/fulls/MG_7972.jpg', cam: 'unassigned', label: 'MG_7972' },
+    { thumb: 'images/thumbs/MG_8007.jpg', full: 'images/fulls/MG_8007.jpg', cam: 'unassigned', label: 'MG_8007' },
+    { thumb: 'images/thumbs/MG_8043.jpg', full: 'images/fulls/MG_8043.jpg', cam: 'unassigned', label: 'MG_8043' },
+    { thumb: 'images/thumbs/MG_8060-spektrafilm-001-2.jpg', full: 'images/fulls/MG_8060-spektrafilm-001-2.jpg', cam: 'unassigned', label: 'MG_8060' },
+    { thumb: 'images/thumbs/MG_8081.jpg', full: 'images/fulls/MG_8081.jpg', cam: 'unassigned', label: 'MG_8081' },
+    { thumb: 'images/thumbs/MG_8084.jpg', full: 'images/fulls/MG_8084.jpg', cam: 'unassigned', label: 'MG_8084' },
+  ];
+
+  const grid = document.getElementById('grid');
+  const countEl = document.getElementById('count');
+  const emptyState = document.getElementById('emptyState');
+  const backdrop = document.getElementById('backdrop');
+  const enlargedImg = document.getElementById('enlargedImg');
+  const metaEl = document.getElementById('meta');
+  const select = document.getElementById('cameraFilter');
+
+  function render(){
+    grid.innerHTML = '';
+    const val = select.value;
+    const visible = val === 'all' ? photos : photos.filter(p => p.cam === val);
+
+    visible.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'frame';
+      div.innerHTML = `
+        <img src="${p.thumb}" alt="${p.label}" loading="lazy">
+        <div class="caption">
+          <span class="label">${p.label}</span>
+          <span class="cam-tag">${CAMERA_LABEL[p.cam]}</span>
+        </div>
+      `;
+      div.addEventListener('click', () => openEnlarged(p));
+      grid.appendChild(div);
+    });
+
+    countEl.textContent = `${visible.length} photo${visible.length === 1 ? '' : 's'}`;
+    emptyState.classList.toggle('show', visible.length === 0);
+  }
+
+  function openEnlarged(p){
+    enlargedImg.src = p.full;
+    enlargedImg.alt = p.label;
+    metaEl.innerHTML = `${p.label}<span class="cam">${CAMERA_LABEL[p.cam]}</span>`;
+    backdrop.classList.add('open');
+  }
+
+  backdrop.addEventListener('click', () => backdrop.classList.remove('open'));
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') backdrop.classList.remove('open'); });
+  select.addEventListener('change', render);
+
+  render();
+</script>
+
+</body>
+</html>
+EOF</parameter>
