@@ -33,3 +33,6 @@
 @media (max-width: 600px) {
   #main { column-count: 1; }
 }
+#main .thumb:after {
+  display: none !important;
+}
