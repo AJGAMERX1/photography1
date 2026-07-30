@@ -4,14 +4,21 @@
   display: block !important;
 }
 #main .thumb {
-  display: inline-block;
-  width: 100%;
-  margin: 0;
+  display: inline-block !important;
+  width: 100% !important;
+  height: auto !important;
+  margin: 0 !important;
   break-inside: avoid;
+  position: static !important;
+  overflow: visible !important;
 }
 #main .thumb .image {
   display: block !important;
+  position: static !important;
   height: auto !important;
+  width: 100% !important;
+  top: auto !important;
+  left: auto !important;
   background-image: none !important;
 }
 #main .thumb .image img {
