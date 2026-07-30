@@ -36,3 +36,14 @@
 #main .thumb:after {
   display: none !important;
 }
+.panel {
+  max-height: 40vh !important;
+  padding: 2em !important;
+}
+.panel > .inner.split {
+  display: block !important;
+}
+.panel > .inner.split > div {
+  margin-left: 0 !important;
+  width: 100% !important;
+}
