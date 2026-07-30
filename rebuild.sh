@@ -1,7 +1,15 @@
 #!/bin/bash
 set -e
 
+echo "Stripping leading underscores from filenames (GitHub Pages blocks these)..."
+find images/fulls -type f -iname "_*.jpg" | while read -r f; do
+  dir=$(dirname "$f")
+  base=$(basename "$f")
+  mv "$f" "$dir/${base#_}"
+done
+
 echo "Resizing images/fulls into images/thumbs (mirroring folders)..."
+rm -rf images/thumbs
 find images/fulls -type f -iname "*.jpg" | while read -r f; do
   rel="${f#images/fulls/}"
   dest="images/thumbs/$rel"
