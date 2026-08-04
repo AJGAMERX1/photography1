@@ -63,10 +63,44 @@
   }
 
   .layout{
-    display:grid; grid-template-columns:1.3fr 1fr; gap:4rem;
+    display:grid; grid-template-columns:auto 1.3fr 1fr; gap:1rem 4rem;
     padding:3.5rem 7vw; align-items:start;
   }
-  @media (max-width:900px){ .layout{ grid-template-columns:1fr; gap:2.5rem; } }
+  @media (max-width:900px){
+    .layout{ grid-template-columns:1fr; gap:1.2rem; }
+    .view-strip{ flex-direction:row !important; }
+  }
+
+  /* --- View switcher strip --- */
+  .view-strip{ display:flex; flex-direction:column; gap:0.55rem; }
+  .view-thumb{
+    display:block; width:60px; padding:0; cursor:pointer;
+    background:none; border:none; font-family:'Inter',sans-serif;
+  }
+  .view-thumb > span:first-child{
+    display:block; width:60px; height:60px; overflow:hidden; position:relative;
+    border:2px solid var(--line); border-radius:2px; background:var(--bg-soft);
+    transition:border-color 0.15s ease;
+  }
+  .view-thumb:hover > span:first-child{ border-color:var(--ink-soft); }
+  .view-thumb.on > span:first-child{ border-color:var(--ink); }
+  .vt-label{
+    display:block; margin-top:0.3rem; font-size:0.58rem; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--ink-soft); text-align:center;
+  }
+  .view-thumb.on .vt-label{ color:var(--ink); }
+  /* studio chip: the print floating on the flat wall */
+  .vt-studio{ display:flex; align-items:center; justify-content:center; }
+  .vt-studio img{
+    width:56%; height:70%; object-fit:cover;
+    box-shadow:0 2px 5px rgba(28,27,25,0.35); transform:rotateY(-14deg);
+  }
+  /* room chip: the room photo with a marker where the print hangs */
+  .vt-room img{ width:100%; height:100%; object-fit:cover; }
+  .vt-room i{
+    position:absolute; left:60%; top:33%; width:16%; height:20%;
+    background:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,0.5);
+  }
 
   /* --- Mockup stage --- */
   .stage{
@@ -111,11 +145,13 @@
   }
   .stage.room-mode .print-wrap:hover .zoom-btn{ background:var(--ink); }
   .room-credit{
+    display:none;   /* only meaningful while the room photo is on screen */
     position:absolute; bottom:6px; right:8px; z-index:4;
     font-size:0.58rem; letter-spacing:0.03em;
     color:rgba(255,255,255,0.5); text-shadow:0 1px 2px rgba(0,0,0,0.6);
     text-decoration:none;
   }
+  .stage.room-mode .room-credit{ display:block; }
   .room-credit:hover{ color:rgba(255,255,255,0.85); }
 
   .print-wrap{
@@ -414,6 +450,19 @@
 
 <div class="layout">
 
+  <!-- View switcher: the studio render and the room scene are separate views of
+       the same configured print, picked from this strip. -->
+  <div class="view-strip" id="viewStrip">
+    <button class="view-thumb on" data-view="studio" title="Studio view — rotate and inspect">
+      <span class="vt-studio"><img alt=""></span>
+      <span class="vt-label">Studio</span>
+    </button>
+    <button class="view-thumb" data-view="room" title="In a room — true-to-scale">
+      <span class="vt-room"><img alt=""><i></i></span>
+      <span class="vt-label">Room</span>
+    </button>
+  </div>
+
   <div class="stage" id="stage">
     <!-- Room scene. The photo is a real interior; the print is mapped onto its
          wall plane with the wall's own perspective, and scaled from the room's
@@ -617,42 +666,40 @@
   ];
 
   // ---- Room scene -----------------------------------------------------------
-  // Set `src` to a room photo and the stage becomes that room, with the print
-  // hung on its wall. Leave src null and the stage stays the plain flat wall,
-  // so the page never depends on an image that isn't there yet.
+  // A SEPARATE view from the studio render — the render (tilt + lighting + zoom)
+  // is untouched and stays the default; this is the "in a room" view you switch
+  // to from the thumbnail strip, the way print shops show scale.
   //
-  // Calibrating a new room photo (all values are for the photo at its natural size):
-  //   anchorXPct/anchorYPct — where the CENTRE of the print sits, as a % of the
-  //                           photo, i.e. the middle of the blank wall area.
-  //   pxPerInchAtWall       — measure something of known real size on that wall
-  //                           in the photo (a 30in-wide door, a 60in sofa) and
-  //                           divide its pixel width by its real inches. This is
-  //                           what makes 8x12 vs 24x36 honestly different.
-  //   rotateY / rotateX     — match the wall's perspective. 0/0 for a wall shot
-  //                           straight on; a few degrees if the camera was angled.
+  // Scale here is MEASURED, not guessed. On the 1024x737 source the ceiling line
+  // sits at y=49 and the floor at y=605, so 556px spans the floor-to-ceiling
+  // height. Taking that as 2450mm (96.46in) gives 5.764 px/in — and the
+  // independent cross-check lands the door handle at 1013mm, dead centre of the
+  // 1000-1050mm standard fitting height. Two unrelated references agreeing is
+  // what makes this a measurement. A 2400-2500mm ceiling moves it only +/-2%.
+  //
+  // The wall is square-on to the camera, so rotateY/rotateX are 0 and the print
+  // needs no perspective correction — that was the flaw in the previous room.
   const ROOM = {
-    // Disabled: this room's wall recedes from the camera, and a flat print hung
-    // on it reads as a sticker no single rotateY can fix. Re-enable only with a
-    // wall shot square-on (see README) — then rotateY/rotateX stay at 0.
-    src: null,               // 'images/room/living-room.jpg'
+    src: 'images/room/door-room.jpg',
     naturalWidth: 1,         // filled in on load
-    anchorXPct: 68,          // blank wall above the sideboard, left of the TV
-    anchorYPct: 27,
-    pxPerInchAtWall: 8.75,   // measured on the 1600px-wide file
-    rotateY: -9,             // that wall recedes slightly to the right
+    imgH: 737,               // natural height the calibration was measured on
+    floorY: 605,             // floor line, px on the source image
+    anchorXpx: 889,          // centre of the blank wall right of the doorway
+    hangCenterIn: 57,        // gallery standard: centre of the piece above floor
+    pxPerInchAtWall: 5.764,
+    rotateY: 0,
     rotateX: 0,
-    creditText: 'Room: Jarosław Ceborski · CC0',
-    creditHref: 'https://commons.wikimedia.org/wiki/File:Living_room_(Unsplash).jpg'
+    creditText: 'Room: CC0',
+    creditHref: 'https://www.rawpixel.com/image/3285456/free-photo-image-door-room-empty'
   };
   let roomReady = false;
+  let viewMode = 'studio';   // 'studio' = the 3D render, 'room' = the room scene
 
   function initRoom(){
-    if (!ROOM.src) return;             // no room installed — keep the plain wall
+    if (!ROOM.src) return;
     roomImg.addEventListener('load', () => {
       ROOM.naturalWidth = roomImg.naturalWidth || 1;
       roomReady = true;
-      roomImg.style.display = 'block';
-      stageEl.classList.add('room-mode');
       if (ROOM.creditText) {
         const a = document.createElement('a');
         a.className = 'room-credit';
@@ -660,14 +707,22 @@
         if (ROOM.creditHref) { a.href = ROOM.creditHref; a.target = '_blank'; a.rel = 'noopener'; }
         stageEl.appendChild(a);
       }
-      applySize();
+      // the print is placed off the room photo's RENDERED width, which isn't
+      // final the instant it decodes — observe the element rather than race load
+      if (window.ResizeObserver) {
+        let lastW = 0;
+        new ResizeObserver(() => {
+          const w = roomImg.clientWidth;
+          if (w && w !== lastW) { lastW = w; applySize(); }
+        }).observe(roomImg);
+      }
+      applyView();
     });
     roomImg.addEventListener('error', () => {
       // a missing/blocked room photo must not take the mockup down with it
       roomReady = false;
-      roomImg.style.display = 'none';
-      stageEl.classList.remove('room-mode');
-      applySize();
+      viewMode = 'studio';
+      applyView();
     });
     roomImg.src = ROOM.src;
   }
@@ -677,6 +732,19 @@
   function roomScale(){
     if (!roomReady || !ROOM.naturalWidth) return 1;
     return (roomImg.clientWidth || ROOM.naturalWidth) / ROOM.naturalWidth;
+  }
+
+  // In room view the print lies flat on a square-on wall; in studio view it keeps
+  // the tilt/lighting render. Switching only changes presentation — finish, size
+  // and verse all carry across untouched.
+  function applyView(){
+    const inRoom = (viewMode === 'room' && roomReady);
+    stageEl.classList.toggle('room-mode', inRoom);
+    roomImg.style.display = inRoom ? 'block' : 'none';
+    document.querySelectorAll('#viewStrip .view-thumb').forEach(t =>
+      t.classList.toggle('on', t.dataset.view === viewMode));
+    applySize();
+    applyRotation();
   }
 
   // ---- Selected photo + verse overlay state ----
@@ -904,7 +972,7 @@
     //      size picker mean something.
     //   3. Plain wall fallback — fit to the stage.
     const [wIn, hIn] = state.size.split('x').map(Number);
-    const inRoom = roomReady && !isZoomed;
+    const inRoom = (viewMode === 'room') && roomReady && !isZoomed;
     let pxPerInch;
 
     if (isZoomed) {
@@ -915,16 +983,18 @@
       pxPerInch = 460 / hIn;
     }
 
-    printEl.style.width = (wIn * pxPerInch) + 'px';
-    printEl.style.height = (hIn * pxPerInch) + 'px';
+    const wPx = wIn * pxPerInch, hPx = hIn * pxPerInch;
+    printEl.style.width = wPx + 'px';
+    printEl.style.height = hPx + 'px';
 
-    // Hang the print on the wall: centre it on the room's anchor point and take
-    // on the wall's perspective, which the user's own tilt then composes with.
+    // Hang it: centred on the blank wall, with the centre of the piece at the
+    // gallery-standard 57in above the measured floor line.
     if (inRoom) {
-      const aw = wIn * pxPerInch, ah = hIn * pxPerInch;
-      printWrap.style.left = `calc(${ROOM.anchorXPct}% - ${aw / 2}px)`;
-      printWrap.style.top  = `calc(${ROOM.anchorYPct}% - ${ah / 2}px)`;
-      printWrap.style.transform = `rotateY(${ROOM.rotateY}deg) rotateX(${ROOM.rotateX}deg)`;
+      const s = roomScale();
+      const centreY = (ROOM.floorY * s) - (ROOM.hangCenterIn * pxPerInch);
+      printWrap.style.left = ((ROOM.anchorXpx * s) - wPx / 2) + 'px';
+      printWrap.style.top  = (centreY - hPx / 2) + 'px';
+      printWrap.style.transform = 'none';   // wall is square-on: no correction
     } else {
       printWrap.style.left = '';
       printWrap.style.top = '';
@@ -932,9 +1002,8 @@
     }
 
     // real thickness per material — paper is nearly flat, metal has slight rigidity,
-    // a framed poster has genuine depth (glass + backing + the frame itself)
-    const wPx = wIn * pxPerInch;
-    const hPx = hIn * pxPerInch;
+    // a framed poster has genuine depth (glass + backing + the frame itself).
+    // wPx/hPx are already computed above — don't redeclare them.
     const depth = state.finish === 'framed' ? 24 : state.finish === 'metal' ? 8 : 4;
     edgeRight.style.width = depth + 'px';
     edgeRight.style.height = hPx + 'px';
@@ -978,6 +1047,8 @@
     const imgSrc = displayImg();
     printImg.src = imgSrc;
     innerImg.src = imgSrc;
+    const vtImg = document.querySelector('.vt-studio img');
+    if (vtImg) vtImg.src = selectedPhoto.thumb;
 
     // size scaling — proportional to real inches, dynamically fit to whichever stage is active
     applySize();
@@ -1040,6 +1111,18 @@
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
   function applyRotation(){
+    // A print hanging on a real wall is flat to it — the tilt render belongs to
+    // the studio view. In room view we zero the rotation and let the contact
+    // shadow do the work instead.
+    if (viewMode === 'room' && roomReady && !isZoomed) {
+      printEl.style.transform = 'none';
+      sheen.style.backgroundPosition = '50% 50%';
+      lightHighlight.style.background = 'none';
+      lightShadow.style.background = 'none';
+      printEl.style.boxShadow = '';   // .stage.room-mode .print supplies the shadow
+      return;
+    }
+
     printEl.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
 
     const nx = rotY / MAX_ROT; // -1..1
@@ -1131,6 +1214,7 @@
     document.body.classList.add('zoom-active');
     document.body.style.overflow = 'hidden';
     applySize();
+    applyRotation();   // room view leaves the print flat — restore the tilt render
   }
   function closeZoom(){
     isZoomed = false;
@@ -1140,6 +1224,7 @@
     document.body.classList.remove('zoom-active');
     document.body.style.overflow = '';
     applySize();
+    applyRotation();   // back to flat if we returned to the room view
   }
 
   zoomBtn.addEventListener('click', (e) => { e.stopPropagation(); openZoom(); });
@@ -1173,6 +1258,16 @@
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(applySize, 120);
   });
+
+  // view strip: thumbnails preview the current photo so the strip tracks the pick
+  document.querySelectorAll('#viewStrip .view-thumb').forEach(t => {
+    t.addEventListener('click', () => {
+      if (t.dataset.view === 'room' && !roomReady) return;  // room photo unavailable
+      viewMode = t.dataset.view;
+      applyView();
+    });
+  });
+  document.querySelector('.vt-room img').src = ROOM.src;
 
   initRoom();
   buildVersePicker();
