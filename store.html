@@ -82,18 +82,32 @@
     overflow:visible;
   }
 
-  .silhouette{
-    flex-shrink:0;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    opacity:0.28;
+  /* --- Room scene ---
+     When a room photo is installed the stage becomes that room and the print is
+     positioned on its wall; without one the stage stays the plain flat wall. */
+  .stage.room-mode{
+    padding:0; display:block; overflow:hidden; min-height:0;
   }
-  .silhouette svg{ display:block; }
-  .silhouette-label{
-    font-size:0.62rem; letter-spacing:0.05em; text-transform:uppercase;
-    color:var(--ink); margin-top:0.4rem; opacity:0.7;
+  .room-img{
+    display:block; width:100%; height:auto;
+    -webkit-user-drag:none; user-drag:none; pointer-events:none;
   }
+  .stage.room-mode .print-wrap{
+    position:absolute; /* placed from ROOM.anchor in JS */
+  }
+  /* contact shadow so the print sits ON the wall instead of floating over it */
+  .stage.room-mode .print{
+    box-shadow:
+      0 0.6vw 1.4vw rgba(0,0,0,0.34),
+      0 0.15vw 0.4vw rgba(0,0,0,0.30);
+  }
+  .room-credit{
+    position:absolute; bottom:6px; right:8px; z-index:4;
+    font-size:0.58rem; letter-spacing:0.03em;
+    color:rgba(255,255,255,0.5); text-shadow:0 1px 2px rgba(0,0,0,0.6);
+    text-decoration:none;
+  }
+  .room-credit:hover{ color:rgba(255,255,255,0.85); }
 
   .print-wrap{
     perspective:1200px;
@@ -107,7 +121,7 @@
   .stage, .print-wrap, .lightbox, .grid-item{
     user-select:none; -webkit-user-select:none; -moz-user-select:none;
   }
-  .print img, .grid-item img, .silhouette svg{
+  .print img, .grid-item img, .room-img{
     -webkit-user-drag:none; user-drag:none; pointer-events:none;
   }
   .grid-item img{ pointer-events:auto; } /* re-enable: the grid tile itself handles the click */
@@ -138,7 +152,7 @@
      under the ✕ and swallow the click — it has no purpose once zoomed, so hide it */
   .print-wrap.zoomed .zoom-btn{ display:none; }
 
-  body.zoom-active .silhouette{ opacity:0; pointer-events:none; transition:opacity 0.2s ease; }
+  body.zoom-active .room-img{ opacity:0; pointer-events:none; transition:opacity 0.2s ease; }
 
   /* sheen overlay, moves opposite tilt */
   .sheen{
@@ -392,46 +406,11 @@
 <div class="layout">
 
   <div class="stage" id="stage">
-    <div class="silhouette">
-      <!-- 5'9" reference figure. viewBox is 30x100 so 1 unit = 0.69in of real height;
-           JS scales width AND height together off this 30:100 ratio (see applySize). -->
-      <svg id="silSvg" width="30" height="0" viewBox="0 0 30 100" fill="none">
-        <g fill="#1c1b19">
-          <!-- head (~1/7.5 of total height, standard adult proportion) -->
-          <ellipse cx="15" cy="6.4" rx="4.4" ry="5.2"/>
-          <!-- neck -->
-          <path d="M13.2 10.6 h3.6 v3.4 h-3.6 z"/>
-          <!-- torso: shoulders -> waist -> hips, kept narrow so it reads as a body -->
-          <path d="M15 13.6
-                   c3.3 0 5.6 1.1 6.3 3.3
-                   l0.9 3.4
-                   c0.3 1.2 -0.1 2 -1.1 2.2
-                   l-0.4 0.1 0.6 8.6
-                   c0.1 1.9 0.3 3.6 0.6 5.3
-                   l0.5 3.1
-                   c0.2 1.4 0.1 2.4 -0.4 3.3
-                   l-1 1.9 0.3 4.1 h-12.6 l0.3 -4.1 -1 -1.9
-                   c-0.5 -0.9 -0.6 -1.9 -0.4 -3.3
-                   l0.5 -3.1
-                   c0.3 -1.7 0.5 -3.4 0.6 -5.3
-                   l0.6 -8.6 -0.4 -0.1
-                   c-1 -0.2 -1.4 -1 -1.1 -2.2
-                   l0.9 -3.4
-                   c0.7 -2.2 3 -3.3 6.3 -3.3 z"/>
-          <!-- arms hanging close to the body, slight elbow bend -->
-          <path d="M7.9 17.4 c-0.9 0.5 -1.5 1.3 -1.8 2.5 l-1.6 7.2 c-0.4 1.9 -0.6 3.4 -0.5 5 l0.4 6.6 c0.1 1 -0.4 1.6 -1.3 1.6 -0.9 0 -1.4 -0.5 -1.5 -1.5 l-0.5 -6.7 c-0.1 -1.9 0.1 -3.7 0.6 -5.8 l1.7 -7.4 c0.5 -2.1 1.6 -3.5 3.4 -4.3 z"/>
-          <path d="M22.1 17.4 c0.9 0.5 1.5 1.3 1.8 2.5 l1.6 7.2 c0.4 1.9 0.6 3.4 0.5 5 l-0.4 6.6 c-0.1 1 0.4 1.6 1.3 1.6 0.9 0 1.4 -0.5 1.5 -1.5 l0.5 -6.7 c0.1 -1.9 -0.1 -3.7 -0.6 -5.8 l-1.7 -7.4 c-0.5 -2.1 -1.6 -3.5 -3.4 -4.3 z"/>
-          <!-- legs: thigh tapering to ankle, with a small gap between them -->
-          <path d="M8.7 44.3 h5.5 l-0.2 21.8 -0.5 20.4 -0.2 10.4 c0 1 -0.7 1.6 -1.9 1.6 -1.2 0 -1.9 -0.6 -1.9 -1.6 l-0.3 -10.4 -0.4 -20.4 z"/>
-          <path d="M21.3 44.3 h-5.5 l0.2 21.8 0.5 20.4 0.2 10.4 c0 1 0.7 1.6 1.9 1.6 1.2 0 1.9 -0.6 1.9 -1.6 l0.3 -10.4 0.4 -20.4 z"/>
-          <!-- feet -->
-          <path d="M8.6 97.6 h5.2 c0.5 0 0.8 0.3 0.8 0.8 v0.8 c0 0.5 -0.3 0.8 -0.8 0.8 h-5.2 c-0.5 0 -0.8 -0.3 -0.8 -0.8 v-0.8 c0 -0.5 0.3 -0.8 0.8 -0.8 z"/>
-          <path d="M21.4 97.6 h-5.2 c-0.5 0 -0.8 0.3 -0.8 0.8 v0.8 c0 0.5 0.3 0.8 0.8 0.8 h5.2 c0.5 0 0.8 -0.3 0.8 -0.8 v-0.8 c0 -0.5 -0.3 -0.8 -0.8 -0.8 z"/>
-        </g>
-      </svg>
-      <div class="silhouette-label">5'9" reference</div>
-    </div>
-
+    <!-- Room scene. The photo is a real interior; the print is mapped onto its
+         wall plane with the wall's own perspective, and scaled from the room's
+         measured pixels-per-inch so a 24x36 genuinely reads bigger than an 8x12.
+         Falls back to the plain wall if no room photo is installed. -->
+    <img class="room-img" id="roomImg" alt="" style="display:none;">
     <div class="print-wrap" id="printWrap">
       <button class="zoom-btn" id="zoomBtn" aria-label="View full and rotate" title="View full and rotate">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -628,6 +607,66 @@
     ['The Lord bless you and keep you; the Lord make his face shine on you.', 'Numbers 6:24–25']
   ];
 
+  // ---- Room scene -----------------------------------------------------------
+  // Set `src` to a room photo and the stage becomes that room, with the print
+  // hung on its wall. Leave src null and the stage stays the plain flat wall,
+  // so the page never depends on an image that isn't there yet.
+  //
+  // Calibrating a new room photo (all values are for the photo at its natural size):
+  //   anchorXPct/anchorYPct — where the CENTRE of the print sits, as a % of the
+  //                           photo, i.e. the middle of the blank wall area.
+  //   pxPerInchAtWall       — measure something of known real size on that wall
+  //                           in the photo (a 30in-wide door, a 60in sofa) and
+  //                           divide its pixel width by its real inches. This is
+  //                           what makes 8x12 vs 24x36 honestly different.
+  //   rotateY / rotateX     — match the wall's perspective. 0/0 for a wall shot
+  //                           straight on; a few degrees if the camera was angled.
+  const ROOM = {
+    src: null,               // e.g. 'images/room/living-room.jpg'
+    naturalWidth: 1,         // filled in on load
+    anchorXPct: 50,
+    anchorYPct: 38,
+    pxPerInchAtWall: 12,
+    rotateY: 0,
+    rotateX: 0,
+    creditText: '',
+    creditHref: ''
+  };
+  let roomReady = false;
+
+  function initRoom(){
+    if (!ROOM.src) return;             // no room installed — keep the plain wall
+    roomImg.addEventListener('load', () => {
+      ROOM.naturalWidth = roomImg.naturalWidth || 1;
+      roomReady = true;
+      roomImg.style.display = 'block';
+      stageEl.classList.add('room-mode');
+      if (ROOM.creditText) {
+        const a = document.createElement('a');
+        a.className = 'room-credit';
+        a.textContent = ROOM.creditText;
+        if (ROOM.creditHref) { a.href = ROOM.creditHref; a.target = '_blank'; a.rel = 'noopener'; }
+        stageEl.appendChild(a);
+      }
+      applySize();
+    });
+    roomImg.addEventListener('error', () => {
+      // a missing/blocked room photo must not take the mockup down with it
+      roomReady = false;
+      roomImg.style.display = 'none';
+      stageEl.classList.remove('room-mode');
+      applySize();
+    });
+    roomImg.src = ROOM.src;
+  }
+
+  // Scale of the room photo as currently rendered vs its natural size, so the
+  // wall's pixels-per-inch stays correct at any viewport width.
+  function roomScale(){
+    if (!roomReady || !ROOM.naturalWidth) return 1;
+    return (roomImg.clientWidth || ROOM.naturalWidth) / ROOM.naturalWidth;
+  }
+
   // ---- Selected photo + verse overlay state ----
   let selectedPhoto = null;
   let state = { finish: 'poster', size: '16x20' };
@@ -645,7 +684,7 @@
   const frameInner = document.querySelector('.frame-inner');
   const priceDisplay = document.getElementById('priceDisplay');
   const sizeNote = document.getElementById('sizeNote');
-  const silSvg = document.getElementById('silSvg');
+  const roomImg = document.getElementById('roomImg');
   const requestBtn = document.getElementById('requestBtn');
   const printWrap = document.getElementById('printWrap');
   const zoomBtn = document.getElementById('zoomBtn');
@@ -846,18 +885,39 @@
   }
 
   function applySize(){
-    // A 5'9" (69in) person is often TALLER than most print sizes — that's real and correct,
-    // so on the small card we scale both together off the taller of the two, keeping their
-    // relative sizes honest. In the lightbox, the silhouette is hidden, so we scale purely
-    // to fill the space and show detail.
+    // Three ways the print gets its scale, in priority order:
+    //   1. Lightbox — the room is hidden, so fill the space for detail.
+    //   2. Room scene — the wall's own measured pixels-per-inch, so the print is
+    //      as big on that wall as it would really be. This is what makes the
+    //      size picker mean something.
+    //   3. Plain wall fallback — fit to the stage.
     const [wIn, hIn] = state.size.split('x').map(Number);
-    const PERSON_HEIGHT_IN = 69;
-    const MAX_STAGE_PX = isZoomed ? Math.min(window.innerHeight * 0.58, 760) : 460;
-    const tallestIn = isZoomed ? hIn : Math.max(PERSON_HEIGHT_IN, hIn);
-    const pxPerInch = MAX_STAGE_PX / tallestIn;
+    const inRoom = roomReady && !isZoomed;
+    let pxPerInch;
+
+    if (isZoomed) {
+      pxPerInch = Math.min(window.innerHeight * 0.58, 760) / hIn;
+    } else if (inRoom) {
+      pxPerInch = ROOM.pxPerInchAtWall * roomScale();
+    } else {
+      pxPerInch = 460 / hIn;
+    }
 
     printEl.style.width = (wIn * pxPerInch) + 'px';
     printEl.style.height = (hIn * pxPerInch) + 'px';
+
+    // Hang the print on the wall: centre it on the room's anchor point and take
+    // on the wall's perspective, which the user's own tilt then composes with.
+    if (inRoom) {
+      const aw = wIn * pxPerInch, ah = hIn * pxPerInch;
+      printWrap.style.left = `calc(${ROOM.anchorXPct}% - ${aw / 2}px)`;
+      printWrap.style.top  = `calc(${ROOM.anchorYPct}% - ${ah / 2}px)`;
+      printWrap.style.transform = `rotateY(${ROOM.rotateY}deg) rotateX(${ROOM.rotateX}deg)`;
+    } else {
+      printWrap.style.left = '';
+      printWrap.style.top = '';
+      printWrap.style.transform = '';
+    }
 
     // real thickness per material — paper is nearly flat, metal has slight rigidity,
     // a framed poster has genuine depth (glass + backing + the frame itself)
@@ -890,21 +950,6 @@
     const verseInset = state.finish === 'framed' ? (framePx + innerBorderPx) : 0;
     verseOverlay.style.inset = verseInset + 'px';
     applyVerseLayout();
-
-    if (!isZoomed) {
-      // silhouette scales off the SAME pxPerInch, and BOTH width and height update
-      // (the original bug: only height was ever set, so the SVG stayed squashed to its
-      // native width no matter how tall it got — fixed by scaling both dimensions
-      // together off the SVG's real 30:100 viewBox aspect ratio; keep these in sync
-      // if the viewBox ever changes)
-      const SIL_ASPECT = 30 / 100;
-      const silHeightPx = PERSON_HEIGHT_IN * pxPerInch;
-      const silWidthPx = silHeightPx * SIL_ASPECT;
-      silSvg.setAttribute('width', silWidthPx);
-      silSvg.setAttribute('height', silHeightPx);
-      silSvg.style.width = silWidthPx + 'px';
-      silSvg.style.height = silHeightPx + 'px';
-    }
   }
 
   function refresh(){
@@ -1109,6 +1154,15 @@
     el.addEventListener('contextmenu', e => e.preventDefault());
   });
 
+  // the wall's pixels-per-inch is tied to the room photo's rendered width, so a
+  // viewport change has to re-derive the print size
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(applySize, 120);
+  });
+
+  initRoom();
   buildVersePicker();
   wireVerseControls();
   buildCameraFilters();
