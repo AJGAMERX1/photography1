@@ -631,7 +631,10 @@
   //   rotateY / rotateX     — match the wall's perspective. 0/0 for a wall shot
   //                           straight on; a few degrees if the camera was angled.
   const ROOM = {
-    src: 'images/room/living-room.jpg',   // CC0 — see images/room/README.md
+    // Disabled: this room's wall recedes from the camera, and a flat print hung
+    // on it reads as a sticker no single rotateY can fix. Re-enable only with a
+    // wall shot square-on (see README) — then rotateY/rotateX stay at 0.
+    src: null,               // 'images/room/living-room.jpg'
     naturalWidth: 1,         // filled in on load
     anchorXPct: 68,          // blank wall above the sideboard, left of the TV
     anchorYPct: 27,
