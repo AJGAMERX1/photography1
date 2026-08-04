@@ -1,0 +1,34 @@
+{
+  "_comment": [
+    "Controls WHICH photos are offered as prints, and what they are called.",
+    "",
+    "Only the photos listed under \"picks\" appear in the store. The main gallery",
+    "still shows everything in images/fulls — this file is purely the sellable",
+    "subset, so mediocre work never reaches the shop.",
+    "",
+    "  file  - path under images/fulls, e.g. \"7d/flowers/MG_7851.jpg\"",
+    "  title - the artistic name shown in the store and in the order email.",
+    "          Leave it \"\" and the filename is used instead.",
+    "",
+    "If \"picks\" is empty, every photo is offered (the old behaviour), so the",
+    "store keeps working until you have curated it.",
+    "",
+    "Edit this file, then run ./rebuild.sh."
+  ],
+  "picks": [
+    { "file": "7d/flowers/MG_7851.jpg",                    "title": "First Light on the Prairie" },
+    { "file": "7d/flowers/MG_7966-2.jpg",                  "title": "Small Sun" },
+    { "file": "7d/flowers/MG_8060-spektrafilm-001-2.jpg",  "title": "Crepe Myrtle, Grain" },
+    { "file": "7d/skies/MG_8103-2.jpg",                    "title": "Weather Coming In" },
+    { "file": "7d/skies/moon-spektrafilm-001.jpg",         "title": "Cold Moon" },
+    { "file": "7d/skies/MG_8127.jpg",                      "title": "Evening Turns Over" },
+    { "file": "7d/misc/MG_8007.jpg",                       "title": "The Quiet Chair" },
+    { "file": "g7x/skies/IMG_2590-spektrafilm-001.jpg",    "title": "Halo" },
+    { "file": "g7x/skies/IMG_2579-3.jpg",                  "title": "Blue Hour, Rising" },
+    { "file": "r6ii/flowers/799A4022-3.jpg",               "title": "Petal Study" },
+    { "file": "r6ii/flowers/799A4046.jpg",                 "title": "Late Bloom" },
+    { "file": "r6ii/skies/799A3978.jpg",                   "title": "Above the Treeline" },
+    { "file": "r6ii/bible/799A4061.jpg",                   "title": "Open Page" },
+    { "file": "r6ii/bible/799A4068-2.jpg",                 "title": "Marked Passage" }
+  ]
+}

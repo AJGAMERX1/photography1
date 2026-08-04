@@ -246,6 +246,49 @@
 
   .print.poster{ box-shadow:0 18px 30px rgba(28,27,25,0.14); }
 
+  /* --- Material surfaces. Overlays sit above the photo and below the lighting
+     layers, so each finish reads as a different physical object. --- */
+  .mat-tex{ position:absolute; inset:0; pointer-events:none; opacity:0; z-index:2; }
+  /* brushed aluminium: fine directional grain plus a broad anisotropic sheen */
+  .print.metal .mat-tex{
+    opacity:1;
+    background:
+      repeating-linear-gradient(96deg,
+        rgba(255,255,255,0.055) 0 1px, rgba(0,0,0,0.045) 1px 2px),
+      linear-gradient(100deg,
+        rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.02) 26%,
+        rgba(0,0,0,0.10) 52%, rgba(255,255,255,0.13) 76%, rgba(255,255,255,0.02) 100%);
+    mix-blend-mode:overlay;
+  }
+  /* canvas: woven warp/weft plus a subtle cloth bloom */
+  .print.canvas .mat-tex{
+    opacity:1;
+    background:
+      repeating-linear-gradient(0deg,
+        rgba(0,0,0,0.055) 0 1px, rgba(255,255,255,0.05) 1px 3px),
+      repeating-linear-gradient(90deg,
+        rgba(0,0,0,0.055) 0 1px, rgba(255,255,255,0.05) 1px 3px),
+      radial-gradient(120% 90% at 50% 40%, rgba(255,255,255,0.07), rgba(0,0,0,0.05));
+    mix-blend-mode:overlay;
+  }
+  /* acrylic: glassy, one clean specular sweep and a bright edge */
+  .print.acrylic .mat-tex{
+    opacity:1;
+    background:linear-gradient(115deg,
+      rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.02) 22%,
+      rgba(255,255,255,0) 55%, rgba(255,255,255,0.16) 88%, rgba(255,255,255,0) 100%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.35);
+  }
+  .print.canvas{ box-shadow:0 16px 26px rgba(28,27,25,0.20); }
+  .print.acrylic{ box-shadow:0 20px 34px rgba(28,27,25,0.26); }
+  /* canvas wraps over a stretcher, so its edge is the photo itself */
+  .print.canvas .edge-right, .print.canvas .edge-bottom{
+    background:linear-gradient(to bottom,#d8d3c8,#b3ada1);
+  }
+  .print.acrylic .edge-right, .print.acrylic .edge-bottom{
+    background:linear-gradient(to bottom,rgba(226,236,240,0.95),rgba(150,170,180,0.9));
+  }
+
   /* --- Scripture overlay: live DOM text laid over the photo, NOT a canvas.
        Canvas is deliberately avoided here for two reasons: the rest of this
        mockup is pure CSS/JS, and a <canvas> can be right-click-saved as an
@@ -319,6 +362,16 @@
   }
   .pos-btn:hover{ border-color:var(--ink-soft); color:var(--ink); }
   .pos-btn.active{ background:var(--ink); border-color:var(--ink); color:var(--bg); }
+  .verse-selected{
+    display:none; margin-top:0.6rem; padding:0.7rem 0.8rem;
+    background:var(--bg-soft); border-left:2px solid var(--ink);
+    font-size:0.8rem; line-height:1.6; color:var(--ink);
+  }
+  .verse-selected.show{ display:block; }
+  .verse-selected .vs-ref{
+    display:block; margin-top:0.4rem; font-size:0.7rem; letter-spacing:0.05em;
+    text-transform:uppercase; color:var(--ink-soft);
+  }
   .verse-note{
     font-size:0.7rem; color:var(--ink-soft); line-height:1.6; margin-top:0.9rem;
   }
@@ -478,6 +531,7 @@
       </button>
       <div class="print poster" id="printEl">
         <img id="printImg" src="" alt="Print preview">
+        <div class="mat-tex"></div>
         <div class="light-shadow"></div>
         <div class="sheen"></div>
         <div class="light-highlight"></div>
@@ -499,10 +553,14 @@
 
     <div class="field">
       <span class="field-label">Finish</span>
-      <div class="option-row" id="finishRow">
-        <button class="option-btn active" data-finish="poster">Poster</button>
-        <button class="option-btn" data-finish="metal">Metal</button>
-        <button class="option-btn" data-finish="framed">Framed Poster</button>
+      <div class="option-row" id="finishRow"></div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">Orientation</span>
+      <div class="option-row" id="orientRow">
+        <button class="option-btn active" data-orient="portrait">Portrait</button>
+        <button class="option-btn" data-orient="landscape">Landscape</button>
       </div>
     </div>
 
@@ -515,9 +573,11 @@
       <span class="field-label">Add a verse (optional, no extra cost)</span>
 
       <label class="field-label" style="margin-top:0.9rem;">Pick a verse</label>
-      <select id="versePick">
-        <option value="">— Common verses —</option>
+      <input type="text" id="verseSearch" placeholder="Search 124 verses — word, reference or theme">
+      <select id="versePick" style="margin-top:0.5rem;">
+        <option value="">— Choose a verse —</option>
       </select>
+      <div class="verse-selected" id="verseSelected"></div>
 
       <label class="field-label" style="margin-top:0.9rem;">Verse text</label>
       <textarea id="verseText" placeholder="Be still, and know that I am God."></textarea>
@@ -567,6 +627,22 @@
         <div class="pos-btn" data-h="right"  data-v="bottom">↘</div>
       </div>
 
+      <label class="field-label" style="margin-top:1.2rem;">Nudge up / down</label>
+      <div class="slider-row">
+        <input type="range" id="verseY" min="0.05" max="0.95" step="0.01" value="0.85">
+        <span class="slider-val" id="verseYVal">85%</span>
+      </div>
+
+      <label class="field-label" style="margin-top:1.2rem;">Snap to grid</label>
+      <div class="slider-row">
+        <input type="range" id="verseGrid" min="2" max="24" step="1" value="8">
+        <span class="slider-val" id="verseGridVal">8×8</span>
+      </div>
+      <label class="option-btn" style="display:flex;align-items:center;gap:0.6rem;margin-top:0.6rem;width:fit-content;">
+        <input type="checkbox" id="verseSnap" checked style="accent-color:var(--ink);">
+        <span>Snap on</span>
+      </label>
+
       <label class="option-btn" style="display:flex;align-items:center;gap:0.6rem;margin-top:1.2rem;width:fit-content;">
         <input type="checkbox" id="verseShadow" checked style="accent-color:var(--ink);">
         <span>Soft shadow behind text</span>
@@ -575,6 +651,32 @@
       <div class="verse-note">
         This is a preview of how your print will be laid out. Anaiah sets the final
         type by hand from these choices before anything goes to print.
+      </div>
+    </div>
+
+    <div class="verse-panel">
+      <span class="field-label">Framing of the photo</span>
+
+      <label class="field-label" style="margin-top:0.9rem;">Zoom / crop</label>
+      <div class="slider-row">
+        <input type="range" id="cropZoom" min="1" max="2.2" step="0.01" value="1">
+        <span class="slider-val" id="cropZoomVal">1.00×</span>
+      </div>
+
+      <label class="field-label" style="margin-top:1.1rem;">Move across</label>
+      <div class="slider-row">
+        <input type="range" id="cropX" min="0" max="1" step="0.01" value="0.5">
+        <span class="slider-val" id="cropXVal">50%</span>
+      </div>
+
+      <label class="field-label" style="margin-top:1.1rem;">Move up / down</label>
+      <div class="slider-row">
+        <input type="range" id="cropY" min="0" max="1" step="0.01" value="0.5">
+        <span class="slider-val" id="cropYVal">50%</span>
+      </div>
+
+      <div class="row" style="margin-top:1rem;">
+        <button class="option-btn" id="cropReset">Reset framing</button>
       </div>
     </div>
 
@@ -612,57 +714,210 @@
   <div class="lightbox-hint">Drag the print, or use the arrows — the lighting shifts as you turn it.</div>
 </div>
 
-<script src="store-data.js"></script>
+<script src="store-data.js?v=1785854303"></script>
 <script>
   // ---- Pricing data, from CanvasDiscount cost sheet ----
   // Poster/Metal come straight from the cost sheet. Framed = poster + a size-scaled
   // frame cost (real single-unit frame retail: ~$9 at 8x12 up to ~$58 at 24x36),
   // NO extra markup yet — explicit test pass, real margins TBD.
-  const PRICING = {
+  // ---- Pricing -------------------------------------------------------------
+  // FACTORY COST straight off the CanvasDiscount product pages, per material.
+  // Nothing here is interpolated or invented: "Poster Framed" in particular now
+  // uses the real quoted prices instead of the frame-cost estimate that stood in
+  // for them before.
+  //
+  // House rules applied below:
+  //   * nothing larger than 24x36 is offered (so metal/acrylic 30x40, canvas
+  //     24x40 / 30x40 / 36x48 are deliberately absent)
+  //   * retail = cost / (1 - MARGIN); MARGIN is the single number to change when
+  //     real margins are decided
+  //   * SHIPPING is added once to the order total, not baked into the print price
+  const MARGIN   = 0.25;
+  const SHIPPING = 9.00;
+
+  const FACTORY_COST = {
     poster: {
-      '8x12': 5.20, '12x12': 10.67, '12x16': 13.33, '16x20': 16.00,
-      '16x24': 18.67, '20x20': 20.00, '12x36': 21.33, '20x24': 22.67,
-      '20x30': 22.67, '24x36': 25.33
+      '8x12':3.90, '12x12':8.00, '12x16':10.00, '16x20':12.00, '16x24':14.00,
+      '20x20':15.00, '12x36':16.00, '20x24':17.00, '20x30':17.00, '24x36':19.00
+    },
+    posterFramed: {                      // real quoted prices, not derived
+      '12x16':30.00, '16x24':48.00, '24x36':86.00
+    },
+    framedPhoto: {
+      '8x8':18.90, '8x12':24.90, '12x16':34.90, '16x16':47.90,
+      '16x20':54.90, '20x30':68.90
     },
     metal: {
-      '8x8': 12.00, '8x10': 20.00, '8x12': 21.33, '11x14': 34.67,
-      '12x16': 36.00, '12x18': 46.67, '16x20': 65.33, '16x24': 66.67,
-      '18x24': 76.00, '20x24': 116.00, '20x30': 122.67, '24x30': 133.33,
-      '24x36': 140.00, '30x40': 237.33
+      '8x8':9.00, '8x10':15.00, '8x12':16.00, '11x14':26.00, '12x16':27.00,
+      '12x18':35.00, '16x20':49.00, '16x24':50.00, '18x24':57.00, '20x24':87.00,
+      '20x30':92.00, '24x30':100.00, '24x36':105.00
     },
-    framed: {} // derived below: poster price + size-scaled frame cost
+    acrylic: {
+      '8x8':9.00, '8x10':12.00, '8x12':13.00, '11x14':25.00, '12x16':26.00,
+      '12x18':35.00, '16x20':45.00, '16x24':50.00, '18x24':57.00, '20x24':85.00,
+      '20x30':95.00, '24x30':105.00, '24x36':115.00
+    },
+    canvas: {
+      '8x8':4.30, '8x10':12.00, '8x12':13.60, '8x14':18.00, '10x12':19.00,
+      '10x14':22.00, '12x12':22.00, '12x16':23.00, '12x18':25.00, '12x20':25.00,
+      '16x16':28.00, '16x20':31.00, '16x24':35.00, '20x20':35.00, '18x24':36.00,
+      '16x30':37.00, '20x24':39.00, '20x30':43.00, '24x30':47.00, '24x36':52.00
+    }
   };
-  // Size-scaled frame cost — interpolated by print area (sq in) between real
-  // single-unit frame retail anchors, so large frames aren't underpriced the way
-  // a single flat add would leave them.
-  function frameCost(size){
-    const [w, h] = size.split('x').map(Number);
-    const area = w * h;
-    const A_MIN = 8 * 12,  C_MIN = 9;    // ~$9 frame at 8x12
-    const A_MAX = 24 * 36, C_MAX = 58;   // ~$58 frame at 24x36
-    const t = Math.max(0, Math.min(1, (area - A_MIN) / (A_MAX - A_MIN)));
-    return C_MIN + t * (C_MAX - C_MIN);
-  }
-  for (const size in PRICING.poster) {
-    PRICING.framed[size] = +(PRICING.poster[size] + frameCost(size)).toFixed(2);
+
+  // Guard the house rule in code rather than trusting the tables above to stay
+  // trimmed by hand — anything over 24x36 is dropped on load.
+  const MAX_SHORT_IN = 24, MAX_LONG_IN = 36;
+  function sizeAllowed(sz){
+    const [a,b] = sz.split('x').map(Number);
+    const shortSide = Math.min(a,b), longSide = Math.max(a,b);
+    return shortSide <= MAX_SHORT_IN && longSide <= MAX_LONG_IN;
   }
 
-  const FINISH_LABEL = { poster: 'Poster', metal: 'Metal Print', framed: 'Framed Poster' };
+  const PRICING = {};
+  for (const mat in FACTORY_COST){
+    PRICING[mat] = {};
+    for (const sz in FACTORY_COST[mat]){
+      if (!sizeAllowed(sz)) continue;
+      PRICING[mat][sz] = +(FACTORY_COST[mat][sz] / (1 - MARGIN)).toFixed(2);
+    }
+  }
+
+  const FINISH_LABEL = {
+    poster:'Poster', posterFramed:'Framed Poster', framedPhoto:'Framed Photo',
+    metal:'Metal Print', acrylic:'Acrylic', canvas:'Canvas'
+  };
+  // which finishes render with a frame around the image
+  const FRAMED_FINISHES = ['posterFramed','framedPhoto'];
+  const isFramed = f => FRAMED_FINISHES.includes(f);
 
   // ---- Common verses offered in the picker (visitor can also type their own) ----
-  const COMMON_VERSES = [
-    ['Be still, and know that I am God.', 'Psalm 46:10'],
-    ['The heavens declare the glory of God; the skies proclaim the work of his hands.', 'Psalm 19:1'],
-    ['The Lord is my shepherd, I lack nothing.', 'Psalm 23:1'],
-    ['For God so loved the world that he gave his one and only Son.', 'John 3:16'],
-    ['I can do all this through him who gives me strength.', 'Philippians 4:13'],
-    ['Trust in the Lord with all your heart and lean not on your own understanding.', 'Proverbs 3:5'],
-    ['Do not fear, for I am with you; do not be dismayed, for I am your God.', 'Isaiah 41:10'],
-    ['For I know the plans I have for you, declares the Lord.', 'Jeremiah 29:11'],
-    ['The Lord is my light and my salvation — whom shall I fear?', 'Psalm 27:1'],
-    ['Give thanks to the Lord, for he is good; his love endures forever.', 'Psalm 107:1'],
-    ['He gives strength to the weary and increases the power of the weak.', 'Isaiah 40:29'],
-    ['The Lord bless you and keep you; the Lord make his face shine on you.', 'Numbers 6:24–25']
+  // 124-verse library carried over from the scripture-overlay tool, tags and all.
+  const VERSE_LIBRARY = [
+    {ref:'Genesis 1:1', text:'In the beginning, God created the heavens and the earth.', tags:['praise']},
+    {ref:'Numbers 6:24–25', text:'The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you.', tags:['praise','comfort']},
+    {ref:'Deuteronomy 31:6', text:'Be strong and courageous… for it is the Lord your God who goes with you. He will not leave you or forsake you.', tags:['strength','comfort']},
+    {ref:'Joshua 1:9', text:'Have I not commanded you? Be strong and courageous. Do not be frightened, and do not be dismayed, for the Lord your God is with you wherever you go.', tags:['strength']},
+    {ref:'Psalm 1:3', text:'He is like a tree planted by streams of water that yields its fruit in its season, and its leaf does not wither.', tags:['wisdom']},
+    {ref:'Psalm 8:3–4', text:'When I look at your heavens, the work of your fingers, the moon and the stars, which you have set in place, what is man that you are mindful of him?', tags:['praise']},
+    {ref:'Psalm 16:11', text:'You make known to me the path of life; in your presence there is fullness of joy; at your right hand are pleasures forevermore.', tags:['joy']},
+    {ref:'Psalm 18:2', text:'The Lord is my rock and my fortress and my deliverer, my God, my rock, in whom I take refuge.', tags:['strength']},
+    {ref:'Psalm 19:1', text:'The heavens declare the glory of God, and the sky above proclaims his handiwork.', tags:['praise']},
+    {ref:'Psalm 23:1–3', text:'The Lord is my shepherd; I shall not want. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul.', tags:['comfort','peace']},
+    {ref:'Psalm 23:4', text:'Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me; your rod and your staff, they comfort me.', tags:['comfort']},
+    {ref:'Psalm 27:1', text:'The Lord is my light and my salvation — whom shall I fear?', tags:['faith','strength']},
+    {ref:'Psalm 27:4', text:'One thing have I asked of the Lord, that will I seek after: that I may dwell in the house of the Lord all the days of my life, to gaze upon the beauty of the Lord.', tags:['praise']},
+    {ref:'Psalm 30:5', text:'Weeping may tarry for the night, but joy comes with the morning.', tags:['hope','joy']},
+    {ref:'Psalm 34:8', text:'Oh, taste and see that the Lord is good! Blessed is the man who takes refuge in him!', tags:['faith']},
+    {ref:'Psalm 34:18', text:'The Lord is near to the brokenhearted and saves the crushed in spirit.', tags:['comfort']},
+    {ref:'Psalm 37:4', text:'Delight yourself in the Lord, and he will give you the desires of your heart.', tags:['hope']},
+    {ref:'Psalm 40:1–2', text:'I waited patiently for the Lord; he inclined to me and heard my cry. He drew me up from the pit of destruction, out of the miry bog, and set my feet upon a rock, making my steps secure.', tags:['hope']},
+    {ref:'Psalm 42:1', text:'As a deer pants for flowing streams, so pants my soul for you, O God.', tags:['faith']},
+    {ref:'Psalm 46:1', text:'God is our refuge and strength, a very present help in trouble.', tags:['strength']},
+    {ref:'Psalm 46:10', text:'Be still, and know that I am God.', tags:['peace']},
+    {ref:'Psalm 51:10', text:'Create in me a clean heart, O God, and renew a right spirit within me.', tags:['faith']},
+    {ref:'Psalm 55:22', text:'Cast your burden on the Lord, and he will sustain you; he will never permit the righteous to be moved.', tags:['comfort']},
+    {ref:'Psalm 56:3', text:'When I am afraid, I put my trust in you.', tags:['faith']},
+    {ref:'Psalm 62:1', text:'For God alone my soul waits in silence; from him comes my salvation.', tags:['peace']},
+    {ref:'Psalm 62:5–6', text:'For God alone, O my soul, wait in silence, for my hope is from him. He only is my rock and my salvation, my fortress; I shall not be shaken.', tags:['hope']},
+    {ref:'Psalm 84:11', text:'For the Lord God is a sun and shield; the Lord bestows favor and honor. No good thing does he withhold from those who walk uprightly.', tags:['praise']},
+    {ref:'Psalm 90:12', text:'So teach us to number our days that we may get a heart of wisdom.', tags:['wisdom']},
+    {ref:'Psalm 91:1–2', text:'He who dwells in the shelter of the Most High will abide in the shadow of the Almighty. I will say to the Lord, “My refuge and my fortress, my God, in whom I trust.”', tags:['peace']},
+    {ref:'Psalm 91:4', text:'He will cover you with his pinions, and under his wings you will find refuge; his faithfulness is a shield and buckler.', tags:['comfort']},
+    {ref:'Psalm 94:19', text:'When the cares of my heart are many, your consolations cheer my soul.', tags:['comfort']},
+    {ref:'Psalm 100:5', text:'For the Lord is good; his steadfast love endures forever, and his faithfulness to all generations.', tags:['praise']},
+    {ref:'Psalm 103:1', text:'Bless the Lord, O my soul, and all that is within me, bless his holy name!', tags:['praise']},
+    {ref:'Psalm 107:1', text:'Give thanks to the Lord, for he is good; his love endures forever.', tags:['praise']},
+    {ref:'Psalm 118:24', text:'This is the day that the Lord has made; let us rejoice and be glad in it.', tags:['joy']},
+    {ref:'Psalm 119:105', text:'Your word is a lamp to my feet and a light to my path.', tags:['wisdom']},
+    {ref:'Psalm 121:1–2', text:'I lift up my eyes to the hills. From where does my help come? My help comes from the Lord, who made heaven and earth.', tags:['comfort','strength']},
+    {ref:'Psalm 126:5', text:'Those who sow in tears shall reap with shouts of joy!', tags:['hope']},
+    {ref:'Psalm 130:5', text:'I wait for the Lord, my soul waits, and in his word I hope.', tags:['hope']},
+    {ref:'Psalm 139:14', text:'I praise you, for I am fearfully and wonderfully made. Wonderful are your works; my soul knows it very well.', tags:['praise']},
+    {ref:'Psalm 139:23–24', text:'Search me, O God, and know my heart! Try me and know my thoughts! And see if there be any grievous way in me, and lead me in the way everlasting!', tags:['faith']},
+    {ref:'Psalm 143:8', text:'Let me hear in the morning of your steadfast love, for in you I trust. Make me know the way I should go, for to you I lift up my soul.', tags:['wisdom']},
+    {ref:'Psalm 145:18', text:'The Lord is near to all who call on him, to all who call on him in truth.', tags:['comfort']},
+    {ref:'Psalm 147:3', text:'He heals the brokenhearted and binds up their wounds.', tags:['comfort']},
+    {ref:'Proverbs 3:5–6', text:'Trust in the Lord with all your heart, and do not lean on your own understanding. In all your ways acknowledge him, and he will make straight your paths.', tags:['faith','wisdom']},
+    {ref:'Proverbs 16:3', text:'Commit your work to the Lord, and your plans will be established.', tags:['wisdom']},
+    {ref:'Proverbs 16:9', text:'The heart of man plans his way, but the Lord establishes his steps.', tags:['wisdom']},
+    {ref:'Proverbs 17:22', text:'A joyful heart is good medicine, but a crushed spirit dries up the bones.', tags:['joy']},
+    {ref:'Proverbs 18:10', text:'The name of the Lord is a strong tower; the righteous man runs into it and is safe.', tags:['strength']},
+    {ref:'Proverbs 31:25', text:'Strength and dignity are her clothing, and she laughs at the time to come.', tags:['strength']},
+    {ref:'Ecclesiastes 3:1', text:'For everything there is a season, and a time for every matter under heaven.', tags:['wisdom']},
+    {ref:'Song of Solomon 2:10', text:'My beloved speaks and says to me: “Arise, my love, my beautiful one, and come away.”', tags:['love']},
+    {ref:'Isaiah 26:3', text:'You keep him in perfect peace whose mind is stayed on you, because he trusts in you.', tags:['peace']},
+    {ref:'Isaiah 40:8', text:'The grass withers, the flower fades, but the word of our God will stand forever.', tags:['faith']},
+    {ref:'Isaiah 40:29', text:'He gives strength to the weary and increases the power of the weak.', tags:['strength']},
+    {ref:'Isaiah 40:31', text:'But they who wait for the Lord shall renew their strength; they shall mount up with wings like eagles; they shall run and not be weary; they shall walk and not faint.', tags:['strength','hope']},
+    {ref:'Isaiah 41:10', text:'Do not fear, for I am with you; do not be dismayed, for I am your God. I will strengthen you and help you.', tags:['strength','comfort']},
+    {ref:'Isaiah 43:1–2', text:'Fear not, for I have redeemed you; I have called you by name, you are mine. When you pass through the waters, I will be with you.', tags:['comfort']},
+    {ref:'Isaiah 43:18–19', text:'Remember not the former things, nor consider the things of old. Behold, I am doing a new thing; now it springs forth, do you not perceive it?', tags:['hope']},
+    {ref:'Isaiah 55:8–9', text:'For my thoughts are not your thoughts, neither are your ways my ways, declares the Lord. For as the heavens are higher than the earth, so are my ways higher than your ways.', tags:['wisdom']},
+    {ref:'Isaiah 55:12', text:'For you shall go out in joy and be led forth in peace; the mountains and the hills before you shall break forth into singing, and all the trees of the field shall clap their hands.', tags:['joy','praise']},
+    {ref:'Isaiah 61:3', text:'To give them a beautiful headdress instead of ashes, the oil of gladness instead of mourning, the garment of praise instead of a faint spirit.', tags:['comfort']},
+    {ref:'Jeremiah 17:7–8', text:'Blessed is the man who trusts in the Lord, whose trust is the Lord. He is like a tree planted by water, that sends out its roots by the stream.', tags:['faith']},
+    {ref:'Jeremiah 29:11', text:'For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, plans to give you hope and a future.', tags:['hope']},
+    {ref:'Jeremiah 31:3', text:'I have loved you with an everlasting love; therefore I have continued my faithfulness to you.', tags:['love']},
+    {ref:'Lamentations 3:22–23', text:'The steadfast love of the Lord never ceases; his mercies never come to an end; they are new every morning; great is your faithfulness.', tags:['hope','faith']},
+    {ref:'Habakkuk 3:19', text:'God, the Lord, is my strength; he makes my feet like the deer’s; he makes me tread on my high places.', tags:['strength']},
+    {ref:'Zephaniah 3:17', text:'The Lord your God is in your midst, a mighty one who will save; he will rejoice over you with gladness; he will quiet you by his love; he will exult over you with loud singing.', tags:['love','joy']},
+    {ref:'Matthew 5:14', text:'You are the light of the world. A city set on a hill cannot be hidden.', tags:['faith']},
+    {ref:'Matthew 5:16', text:'Let your light shine before others, so that they may see your good works and give glory to your Father who is in heaven.', tags:['wisdom']},
+    {ref:'Matthew 6:26', text:'Look at the birds of the air: they neither sow nor reap nor gather into barns, and yet your heavenly Father feeds them. Are you not of more value than they?', tags:['comfort']},
+    {ref:'Matthew 6:33', text:'But seek first the kingdom of God and his righteousness, and all these things will be added to you.', tags:['faith']},
+    {ref:'Matthew 6:34', text:'Therefore do not be anxious about tomorrow, for tomorrow will be anxious for itself. Sufficient for the day is its own trouble.', tags:['peace']},
+    {ref:'Matthew 11:28', text:'Come to me, all who labor and are heavy laden, and I will give you rest.', tags:['comfort']},
+    {ref:'Matthew 11:29', text:'Take my yoke upon you, and learn from me, for I am gentle and lowly in heart, and you will find rest for your souls.', tags:['peace']},
+    {ref:'Matthew 28:20', text:'And behold, I am with you always, to the end of the age.', tags:['comfort']},
+    {ref:'Mark 11:24', text:'Therefore I tell you, whatever you ask in prayer, believe that you have received it, and it will be yours.', tags:['faith']},
+    {ref:'Luke 1:37', text:'For nothing will be impossible with God.', tags:['faith']},
+    {ref:'John 1:1', text:'In the beginning was the Word, and the Word was with God, and the Word was God.', tags:['faith']},
+    {ref:'John 1:5', text:'The light shines in the darkness, and the darkness has not overcome it.', tags:['hope']},
+    {ref:'John 3:16', text:'For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.', tags:['love']},
+    {ref:'John 8:12', text:'I am the light of the world. Whoever follows me will not walk in darkness, but will have the light of life.', tags:['hope']},
+    {ref:'John 10:10', text:'I came that they may have life and have it abundantly.', tags:['joy']},
+    {ref:'John 11:25', text:'I am the resurrection and the life. Whoever believes in me, though he die, yet shall he live.', tags:['eternity']},
+    {ref:'John 14:6', text:'I am the way, and the truth, and the life. No one comes to the Father except through me.', tags:['faith']},
+    {ref:'John 14:27', text:'Peace I leave with you; my peace I give to you. Not as the world gives do I give to you. Let not your hearts be troubled, neither let them be afraid.', tags:['peace']},
+    {ref:'John 15:13', text:'Greater love has no one than this, that someone lay down his life for his friends.', tags:['love']},
+    {ref:'John 16:33', text:'In the world you will have tribulation. But take heart; I have overcome the world.', tags:['trials']},
+    {ref:'Romans 5:8', text:'But God shows his love for us in that while we were still sinners, Christ died for us.', tags:['love']},
+    {ref:'Romans 8:18', text:'For I consider that the sufferings of this present time are not worth comparing with the glory that is to be revealed to us.', tags:['hope']},
+    {ref:'Romans 8:28', text:'And we know that in all things God works for the good of those who love him, who have been called according to his purpose.', tags:['hope']},
+    {ref:'Romans 8:38–39', text:'For I am sure that neither death nor life, nor angels nor rulers, nor things present nor things to come, will be able to separate us from the love of God in Christ Jesus our Lord.', tags:['love']},
+    {ref:'Romans 12:2', text:'Do not be conformed to this world, but be transformed by the renewal of your mind.', tags:['wisdom']},
+    {ref:'Romans 12:12', text:'Rejoice in hope, be patient in tribulation, be constant in prayer.', tags:['hope']},
+    {ref:'Romans 15:13', text:'May the God of hope fill you with all joy and peace in believing, so that by the power of the Holy Spirit you may abound in hope.', tags:['hope','joy']},
+    {ref:'1 Corinthians 13:4–7', text:'Love is patient and kind; love does not envy or boast; it is not arrogant or rude. Love bears all things, believes all things, hopes all things, endures all things.', tags:['love']},
+    {ref:'1 Corinthians 13:13', text:'So now faith, hope, and love abide, these three; but the greatest of these is love.', tags:['love']},
+    {ref:'1 Corinthians 16:14', text:'Let all that you do be done in love.', tags:['love']},
+    {ref:'2 Corinthians 4:16–18', text:'So we do not lose heart. For this light momentary affliction is preparing for us an eternal weight of glory beyond all comparison.', tags:['hope']},
+    {ref:'2 Corinthians 5:7', text:'For we walk by faith, not by sight.', tags:['faith']},
+    {ref:'2 Corinthians 12:9', text:'My grace is sufficient for you, for my power is made perfect in weakness.', tags:['strength']},
+    {ref:'Galatians 2:20', text:'It is no longer I who live, but Christ who lives in me.', tags:['faith']},
+    {ref:'Galatians 5:22–23', text:'But the fruit of the Spirit is love, joy, peace, patience, kindness, goodness, faithfulness, gentleness, self-control.', tags:['wisdom']},
+    {ref:'Galatians 6:9', text:'And let us not grow weary of doing good, for in due season we will reap, if we do not give up.', tags:['trials']},
+    {ref:'Ephesians 2:8–9', text:'For by grace you have been saved through faith. And this is not your own doing; it is the gift of God, not a result of works.', tags:['faith']},
+    {ref:'Ephesians 3:20', text:'Now to him who is able to do far more abundantly than all that we ask or think, according to the power at work within us.', tags:['faith']},
+    {ref:'Philippians 4:6–7', text:'Do not be anxious about anything, but in everything by prayer and supplication with thanksgiving let your requests be made known to God. And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus.', tags:['peace']},
+    {ref:'Philippians 4:8', text:'Whatever is true, whatever is honorable, whatever is just, whatever is pure, whatever is lovely, whatever is commendable, think about these things.', tags:['wisdom']},
+    {ref:'Philippians 4:13', text:'I can do all this through him who gives me strength.', tags:['strength']},
+    {ref:'Philippians 4:19', text:'And my God will supply every need of yours according to his riches in glory in Christ Jesus.', tags:['hope']},
+    {ref:'Colossians 3:2', text:'Set your minds on things that are above, not on things that are on earth.', tags:['wisdom']},
+    {ref:'Colossians 3:23', text:'Whatever you do, work heartily, as for the Lord and not for men.', tags:['wisdom']},
+    {ref:'1 Thessalonians 5:16–18', text:'Rejoice always, pray without ceasing, give thanks in all circumstances; for this is the will of God in Christ Jesus for you.', tags:['joy']},
+    {ref:'2 Timothy 1:7', text:'For God gave us a spirit not of fear but of power and love and self-control.', tags:['strength']},
+    {ref:'Hebrews 11:1', text:'Now faith is the assurance of things hoped for, the conviction of things not seen.', tags:['faith']},
+    {ref:'Hebrews 12:1–2', text:'Let us run with endurance the race that is set before us, looking to Jesus, the founder and perfecter of our faith.', tags:['trials']},
+    {ref:'Hebrews 13:5', text:'I will never leave you nor forsake you.', tags:['comfort']},
+    {ref:'James 1:2–3', text:'Count it all joy, my brothers, when you meet trials of various kinds, for you know that the testing of your faith produces steadfastness.', tags:['trials']},
+    {ref:'James 1:17', text:'Every good gift and every perfect gift is from above, coming down from the Father of lights.', tags:['praise']},
+    {ref:'James 4:8', text:'Draw near to God, and he will draw near to you.', tags:['faith']},
+    {ref:'1 Peter 5:7', text:'Casting all your anxieties on him, because he cares for you.', tags:['comfort']},
+    {ref:'1 John 4:18', text:'There is no fear in love, but perfect love casts out fear.', tags:['love']},
+    {ref:'1 John 4:19', text:'We love because he first loved us.', tags:['love']},
+    {ref:'Revelation 21:4', text:'He will wipe away every tear from their eyes, and death shall be no more, neither shall there be mourning, nor crying, nor pain anymore, for the former things have passed away.', tags:['eternity','comfort']},
   ];
 
   // ---- Room scene -----------------------------------------------------------
@@ -749,13 +1004,19 @@
 
   // ---- Selected photo + verse overlay state ----
   let selectedPhoto = null;
-  let state = { finish: 'poster', size: '16x20' };
+  let state = { finish: 'poster', size: '16x20', landscape: false };
   const verse = {
     text: '', ref: '',
     font: "'Cormorant Garamond', serif",
     size: 4, opacity: 1, color: '#ffffff',
-    h: 'center', v: 'bottom', shadow: true
+    h: 'center', v: 'bottom', shadow: true,
+    // free placement as a fraction of the print, snapped to a grid — the 9-way
+    // preset buttons just jump to the matching grid point
+    x: 0.5, y: 0.85, grid: 8, snap: true
   };
+  // how the photo sits inside the print: offset is a fraction of the overflow,
+  // zoom crops in. Lets a visitor move the subject inside the frame.
+  const crop = { x: 0.5, y: 0.5, zoom: 1 };
 
   const printEl = document.getElementById('printEl');
   const printImg = document.getElementById('printImg');
@@ -850,12 +1111,27 @@
   const verseBody     = document.getElementById('verseBody');
   const verseRefLine  = document.getElementById('verseRefLine');
 
+  // Shows the full text of the verse chosen from the library, so the picker
+  // isn't just a list of references. Only library verses have text to show —
+  // a hand-typed verse clears it.
+  function showSelectedVerse(v){
+    const box = document.getElementById('verseSelected');
+    if (!v) { box.classList.remove('show'); box.innerHTML = ''; return; }
+    box.innerHTML = '';
+    box.appendChild(document.createTextNode('\u201c' + v.text + '\u201d'));
+    const r = document.createElement('span');
+    r.className = 'vs-ref';
+    r.textContent = v.ref + (v.tags.length ? ' · ' + v.tags.join(', ') : '');
+    box.appendChild(r);
+    box.classList.add('show');
+  }
+
   function buildVersePicker(){
     const sel = document.getElementById('versePick');
-    COMMON_VERSES.forEach(([text, ref]) => {
+    VERSE_LIBRARY.forEach((v,i) => {
       const opt = document.createElement('option');
-      opt.value = text + '|' + ref;
-      opt.textContent = ref;
+      opt.value = String(i);
+      opt.textContent = v.ref;
       sel.appendChild(opt);
     });
   }
@@ -867,6 +1143,16 @@
     const hPx = parseFloat(printEl.style.height) || printEl.getBoundingClientRect().height;
     if (!hPx) return;
     verseOverlay.style.fontSize = (hPx * (verse.size / 100)) + 'px';
+  }
+
+  function applyCrop(){
+    const ox = (crop.x * 100).toFixed(1) + '%';
+    const oy = (crop.y * 100).toFixed(1) + '%';
+    [printImg, innerImg].forEach(im => {
+      im.style.objectPosition = ox + ' ' + oy;
+      im.style.transform = 'scale(' + crop.zoom.toFixed(3) + ')';
+      im.style.transformOrigin = ox + ' ' + oy;
+    });
   }
 
   function renderVerse(){
@@ -883,6 +1169,12 @@
     verseOverlay.style.opacity = verse.opacity;
     verseOverlay.dataset.h = verse.h;
     verseOverlay.dataset.v = verse.v;
+    // absolute placement wins when it's been moved off a preset
+    verseOverlay.style.justifyContent = 'flex-start';
+    verseOverlay.style.alignItems =
+      verse.h === 'left' ? 'flex-start' : verse.h === 'right' ? 'flex-end' : 'center';
+    verseOverlay.style.paddingTop = (verse.y * 100).toFixed(2) + '%';
+    verseOverlay.style.transform = 'translateY(-50%)';
     // shadow scales with the type so it stays proportional at any print size
     verseOverlay.style.textShadow = verse.shadow
       ? '0 0.03em 0.14em rgba(0,0,0,0.55), 0 0 0.5em rgba(0,0,0,0.35)'
@@ -897,15 +1189,36 @@
     const refEl = document.getElementById('verseRefInput');
 
     pick.addEventListener('change', function(){
-      if (!this.value) return;
-      const [t, r] = this.value.split('|');
-      verse.text = t; verse.ref = r;
-      textEl.value = t; refEl.value = r;
-      this.value = '';
+      if (this.value === '') { showSelectedVerse(null); return; }
+      const v = VERSE_LIBRARY[+this.value];
+      if (!v) return;
+      verse.text = v.text; verse.ref = v.ref;
+      textEl.value = v.text; refEl.value = v.ref;
+      showSelectedVerse(v);
       renderVerse(); refresh();
     });
 
-    textEl.addEventListener('input', () => { verse.text = textEl.value; renderVerse(); refresh(); });
+    // Search filters the dropdown across text, reference and theme tags.
+    const search = document.getElementById('verseSearch');
+    search.addEventListener('input', () => {
+      const q = search.value.trim().toLowerCase();
+      pick.innerHTML = '';
+      const first = document.createElement('option');
+      first.value = ''; first.textContent = '— Choose a verse —';
+      pick.appendChild(first);
+      let shown = 0;
+      VERSE_LIBRARY.forEach((v,i) => {
+        if (q && !(v.ref.toLowerCase().includes(q) ||
+                   v.text.toLowerCase().includes(q) ||
+                   v.tags.some(t => t.includes(q)))) return;
+        const o = document.createElement('option');
+        o.value = String(i); o.textContent = v.ref;
+        pick.appendChild(o); shown++;
+      });
+      first.textContent = q ? `— ${shown} match${shown===1?'':'es'} —` : '— Choose a verse —';
+    });
+
+    textEl.addEventListener('input', () => { verse.text = textEl.value; showSelectedVerse(null); renderVerse(); refresh(); });
     refEl.addEventListener('input', () => { verse.ref = refEl.value; renderVerse(); refresh(); });
 
     document.getElementById('verseFont').addEventListener('change', function(){
@@ -938,6 +1251,9 @@
     document.querySelectorAll('#versePos .pos-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         verse.h = btn.dataset.h; verse.v = btn.dataset.v;
+        verse.y = btn.dataset.v === 'top' ? 0.15 : btn.dataset.v === 'middle' ? 0.5 : 0.85;
+        const yIn = document.getElementById('verseY');
+        if (yIn) { yIn.value = verse.y; document.getElementById('verseYVal').textContent = Math.round(verse.y*100)+'%'; }
         document.querySelectorAll('#versePos .pos-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         renderVerse(); refresh();
@@ -946,6 +1262,71 @@
 
     document.getElementById('verseShadow').addEventListener('change', function(){
       verse.shadow = this.checked; renderVerse(); refresh();
+    });
+
+    // free vertical placement, snapped to the grid when snapping is on
+    const yEl = document.getElementById('verseY');
+    const applyY = () => {
+      let v = parseFloat(yEl.value);
+      if (verse.snap) { const step = 1 / verse.grid; v = Math.round(v / step) * step; }
+      verse.y = Math.min(0.95, Math.max(0.05, v));
+      document.getElementById('verseYVal').textContent = Math.round(verse.y * 100) + '%';
+      renderVerse(); refresh();
+    };
+    yEl.addEventListener('input', applyY);
+
+    const gEl = document.getElementById('verseGrid');
+    gEl.addEventListener('input', function(){
+      verse.grid = parseInt(this.value, 10);
+      document.getElementById('verseGridVal').textContent = verse.grid + '×' + verse.grid;
+      applyY();
+    });
+    document.getElementById('verseSnap').addEventListener('change', function(){
+      verse.snap = this.checked; applyY();
+    });
+
+    // ---- crop / framing of the photo inside the print ----
+    const bind = (id, valId, fmt, set) => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', function(){
+        set(parseFloat(this.value));
+        document.getElementById(valId).textContent = fmt(parseFloat(this.value));
+        applyCrop();
+      });
+    };
+    bind('cropZoom','cropZoomVal', v => v.toFixed(2)+'×',      v => crop.zoom = v);
+    bind('cropX',   'cropXVal',    v => Math.round(v*100)+'%', v => crop.x = v);
+    bind('cropY',   'cropYVal',    v => Math.round(v*100)+'%', v => crop.y = v);
+    document.getElementById('cropReset').addEventListener('click', () => {
+      crop.x = 0.5; crop.y = 0.5; crop.zoom = 1;
+      document.getElementById('cropZoom').value = 1;
+      document.getElementById('cropX').value = 0.5;
+      document.getElementById('cropY').value = 0.5;
+      document.getElementById('cropZoomVal').textContent = '1.00×';
+      document.getElementById('cropXVal').textContent = '50%';
+      document.getElementById('cropYVal').textContent = '50%';
+      applyCrop();
+    });
+  }
+
+  // Catalogue sizes are quoted portrait (short x long). Landscape swaps the two;
+  // the price is identical because it's the same sheet rotated.
+  function sizeInches(){
+    const [a,b] = state.size.split('x').map(Number);
+    return state.landscape ? [Math.max(a,b), Math.min(a,b)] : [Math.min(a,b), Math.max(a,b)];
+  }
+
+  function buildFinishOptions(){
+    const row = document.getElementById('finishRow');
+    row.innerHTML = '';
+    Object.keys(PRICING).forEach(mat => {
+      if (!Object.keys(PRICING[mat]).length) return;
+      const b = document.createElement('button');
+      b.className = 'option-btn' + (mat === state.finish ? ' active' : '');
+      b.textContent = FINISH_LABEL[mat];
+      b.dataset.finish = mat;
+      b.addEventListener('click', () => { state.finish = mat; refresh(); });
+      row.appendChild(b);
     });
   }
 
@@ -957,7 +1338,9 @@
     sizes.forEach(size => {
       const btn = document.createElement('button');
       btn.className = 'option-btn' + (size === state.size ? ' active' : '');
-      btn.textContent = size.replace('x', '×') + '"';
+      const [sa,sb] = size.split('x').map(Number);
+      const lo=Math.min(sa,sb), hi=Math.max(sa,sb);
+      btn.textContent = (state.landscape ? hi+'×'+lo : lo+'×'+hi) + '"';
       btn.dataset.size = size;
       btn.addEventListener('click', () => { state.size = size; refresh(); });
       row.appendChild(btn);
@@ -971,7 +1354,7 @@
     //      as big on that wall as it would really be. This is what makes the
     //      size picker mean something.
     //   3. Plain wall fallback — fit to the stage.
-    const [wIn, hIn] = state.size.split('x').map(Number);
+    const [wIn, hIn] = sizeInches();
     const inRoom = (viewMode === 'room') && roomReady && !isZoomed;
     let pxPerInch;
 
@@ -1004,7 +1387,15 @@
     // real thickness per material — paper is nearly flat, metal has slight rigidity,
     // a framed poster has genuine depth (glass + backing + the frame itself).
     // wPx/hPx are already computed above — don't redeclare them.
-    const depth = state.finish === 'framed' ? 24 : state.finish === 'metal' ? 8 : 4;
+    // Thickness in REAL INCHES, converted through the same pxPerInch as the print.
+    // A fixed pixel slab was the bug behind the odd-looking poster edge: paper has
+    // essentially no visible edge, but a flat 4px slab gave it one at every size.
+    // Canvas is the deep one here — it wraps a stretcher bar.
+    const DEPTH_IN = {
+      poster:0.01, posterFramed:1.0, framedPhoto:1.0,
+      metal:0.05, acrylic:0.25, canvas:1.5
+    };
+    const depth = Math.max(0, (DEPTH_IN[state.finish] ?? 0.05) * pxPerInch);
     edgeRight.style.width = depth + 'px';
     edgeRight.style.height = hPx + 'px';
     edgeRight.style.transform = `translateX(${wPx}px) rotateY(90deg)`;
@@ -1012,23 +1403,23 @@
     edgeBottom.style.height = depth + 'px';
     edgeBottom.style.transform = `translateY(${hPx}px) rotateX(-90deg)`;
 
-    // frame width scales off the SAME real-world pxPerInch as the print itself —
-    // a "normal" ~1.1in frame stays visually normal whether the print renders
-    // tiny (8x12) or large (24x36), instead of a fixed px border overwhelming small sizes
-    const frameInches = 0.9;
+    // FRAME MOULDING. There is no mat on these products — the moulding sits
+    // straight on the print — so the old inner "mat" band is gone and only the
+    // moulding face remains. CanvasDiscount don't publish a profile width; 0.75in
+    // is the common face width for this style of slim photo frame. This is the
+    // ONE number to correct if you measure a real one.
+    const frameInches = 0.75;
     const framePx = Math.max(3, frameInches * pxPerInch);
     frameBorder.style.borderWidth = framePx + 'px';
     frameInner.style.inset = framePx + 'px';
 
-    // the frame's inner black border — ~0.5in of moulding lip around the photo,
-    // scaled off the same real-world pxPerInch so it stays proportional at any size
-    const innerBorderInches = 0.5;
-    const innerBorderPx = Math.max(2, innerBorderInches * pxPerInch);
-    frameInner.style.padding = innerBorderPx + 'px';
+    // no mat: the image runs right up to the moulding rebate
+    const innerBorderPx = 0;
+    frameInner.style.padding = '0px';
 
     // the verse sits on the photo, so for a framed print it has to pull in past
     // the moulding and its inner border rather than covering the frame itself
-    const verseInset = state.finish === 'framed' ? (framePx + innerBorderPx) : 0;
+    const verseInset = isFramed(state.finish) ? (framePx + innerBorderPx) : 0;
     verseOverlay.style.inset = verseInset + 'px';
     applyVerseLayout();
   }
@@ -1036,9 +1427,7 @@
   function refresh(){
     if (!selectedPhoto) return;
 
-    // finish buttons
-    document.querySelectorAll('#finishRow .option-btn').forEach(b =>
-      b.classList.toggle('active', b.dataset.finish === state.finish));
+    buildFinishOptions();
     buildSizeOptions();
     document.querySelectorAll('#sizeRow .option-btn').forEach(b =>
       b.classList.toggle('active', b.dataset.size === state.size));
@@ -1049,22 +1438,25 @@
     innerImg.src = imgSrc;
     const vtImg = document.querySelector('.vt-studio img');
     if (vtImg) vtImg.src = selectedPhoto.thumb;
+    applyCrop();
 
     // size scaling — proportional to real inches, dynamically fit to whichever stage is active
     applySize();
 
     // finish-specific styling
-    printEl.classList.remove('poster', 'metal', 'framed');
+    printEl.classList.remove('poster','posterFramed','framedPhoto','metal','acrylic','canvas','framed');
     printEl.classList.add(state.finish);
-    frameBorder.style.display = state.finish === 'framed' ? 'block' : 'none';
-    frameInner.style.display = state.finish === 'framed' ? 'flex' : 'none';
-    printImg.style.display = state.finish === 'framed' ? 'none' : 'block';
+    if (isFramed(state.finish)) printEl.classList.add('framed');
+    frameBorder.style.display = isFramed(state.finish) ? 'block' : 'none';
+    frameInner.style.display  = isFramed(state.finish) ? 'flex'  : 'none';
+    printImg.style.display    = isFramed(state.finish) ? 'none'  : 'block';
 
     // price
-    const [wIn, hIn] = state.size.split('x').map(Number);
+    const [wIn, hIn] = sizeInches();
     const price = PRICING[state.finish][state.size];
-    priceDisplay.textContent = '$' + price.toFixed(2);
-    sizeNote.textContent = wIn + '×' + hIn + ' in';
+    const total = price + SHIPPING;
+    priceDisplay.textContent = '$' + total.toFixed(2);
+    sizeNote.textContent = wIn + '×' + hIn + ' in · incl. $' + SHIPPING.toFixed(2) + ' shipping';
 
     // mailto
     const photoName = prettyLabel(selectedPhoto.label);
@@ -1097,8 +1489,13 @@
     requestBtn.href = `mailto:anaiaholiverphotography@gmail.com?subject=${subject}&body=${body}`;
   }
 
-  document.querySelectorAll('#finishRow .option-btn').forEach(b => {
-    b.addEventListener('click', () => { state.finish = b.dataset.finish; refresh(); });
+  document.querySelectorAll('#orientRow .option-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      state.landscape = (b.dataset.orient === 'landscape');
+      document.querySelectorAll('#orientRow .option-btn').forEach(x =>
+        x.classList.toggle('active', x === b));
+      refresh();
+    });
   });
 
   // ---- Rotation state, driven by drag (zoomed only) + explicit pan buttons ----
