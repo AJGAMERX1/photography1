@@ -134,6 +134,9 @@
     transition:transform 0.15s ease;
   }
   .zoom-btn:hover{ transform:scale(1.08); }
+  /* the zoom button travels with the print into the lightbox, where it used to sit
+     under the ✕ and swallow the click — it has no purpose once zoomed, so hide it */
+  .print-wrap.zoomed .zoom-btn{ display:none; }
 
   body.zoom-active .silhouette{ opacity:0; pointer-events:none; transition:opacity 0.2s ease; }
 
@@ -163,18 +166,6 @@
     background:linear-gradient(135deg, rgba(10,10,10,0) 0%, rgba(10,10,10,0) 100%);
   }
 
-  /* metal-only magnet dots */
-  .magnet{
-    position:absolute; width:7px; height:7px; border-radius:50%;
-    background:rgba(0,0,0,0.35); box-shadow:inset 0 0 0 1px rgba(255,255,255,0.25);
-    display:none;
-  }
-  .print.metal .magnet{ display:block; }
-  .magnet.tl{ top:10px; left:10px; }
-  .magnet.tr{ top:10px; right:10px; }
-  .magnet.bl{ bottom:10px; left:10px; }
-  .magnet.br{ bottom:10px; right:10px; }
-
   /* framed poster treatment */
   .print.framed{
     padding:0;
@@ -182,17 +173,17 @@
   .print.framed .frame-border{
     position:absolute; inset:0;
     border: 14px solid #4a3a2c;
-    box-shadow:
-      inset 0 0 0 2px rgba(0,0,0,0.25),
-      inset 0 0 0 16px transparent; /* mat area, transparent for now per instruction */
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,0.25);
     pointer-events:none;
   }
-  .print.framed .mat{
+  /* Inner border of the frame — the black lip the frame moulding casts around the
+     photo. Not a mat: it's part of the frame, sized in JS off the same pxPerInch. */
+  .print.framed .frame-inner{
     position:absolute; inset:14px;
-    background:#141414; /* moderate black mat, ~0.5in — padding set in JS off pxPerInch */
+    background:#141414;
     display:flex; align-items:center; justify-content:center;
   }
-  .print.framed .mat img{ width:100%; height:100%; object-fit:cover; }
+  .print.framed .frame-inner img{ width:100%; height:100%; object-fit:cover; }
 
   .print.poster{ box-shadow:0 18px 30px rgba(28,27,25,0.14); }
 
@@ -243,7 +234,7 @@
     min-height:58vh; width:100%;
   }
   .lightbox-close{
-    position:absolute; top:1.6rem; right:1.8rem;
+    position:absolute; top:1.6rem; right:1.8rem; z-index:20;
     width:42px; height:42px; border-radius:50%;
     background:rgba(255,255,255,0.08); color:#f2f0eb; border:1px solid rgba(255,255,255,0.15);
     font-size:1rem; cursor:pointer; transition:background 0.15s ease;
@@ -325,8 +316,41 @@
 
   <div class="stage" id="stage">
     <div class="silhouette">
-      <svg id="silSvg" width="34" height="0" viewBox="0 0 34 100" fill="none">
-        <path d="M17 0 C21 0 24 3 24 8 C24 12 22 14 20 15 L20 18 C26 20 30 26 30 34 L30 60 C30 63 28 65 25 65 L25 95 C25 98 23 100 20 100 L14 100 C11 100 9 98 9 95 L9 65 C6 65 4 63 4 60 L4 34 C4 26 8 20 14 18 L14 15 C12 14 10 12 10 8 C10 3 13 0 17 0 Z" fill="#1c1b19"/>
+      <!-- 5'9" reference figure. viewBox is 30x100 so 1 unit = 0.69in of real height;
+           JS scales width AND height together off this 30:100 ratio (see applySize). -->
+      <svg id="silSvg" width="30" height="0" viewBox="0 0 30 100" fill="none">
+        <g fill="#1c1b19">
+          <!-- head (~1/7.5 of total height, standard adult proportion) -->
+          <ellipse cx="15" cy="6.4" rx="4.4" ry="5.2"/>
+          <!-- neck -->
+          <path d="M13.2 10.6 h3.6 v3.4 h-3.6 z"/>
+          <!-- torso: shoulders -> waist -> hips, kept narrow so it reads as a body -->
+          <path d="M15 13.6
+                   c3.3 0 5.6 1.1 6.3 3.3
+                   l0.9 3.4
+                   c0.3 1.2 -0.1 2 -1.1 2.2
+                   l-0.4 0.1 0.6 8.6
+                   c0.1 1.9 0.3 3.6 0.6 5.3
+                   l0.5 3.1
+                   c0.2 1.4 0.1 2.4 -0.4 3.3
+                   l-1 1.9 0.3 4.1 h-12.6 l0.3 -4.1 -1 -1.9
+                   c-0.5 -0.9 -0.6 -1.9 -0.4 -3.3
+                   l0.5 -3.1
+                   c0.3 -1.7 0.5 -3.4 0.6 -5.3
+                   l0.6 -8.6 -0.4 -0.1
+                   c-1 -0.2 -1.4 -1 -1.1 -2.2
+                   l0.9 -3.4
+                   c0.7 -2.2 3 -3.3 6.3 -3.3 z"/>
+          <!-- arms hanging close to the body, slight elbow bend -->
+          <path d="M7.9 17.4 c-0.9 0.5 -1.5 1.3 -1.8 2.5 l-1.6 7.2 c-0.4 1.9 -0.6 3.4 -0.5 5 l0.4 6.6 c0.1 1 -0.4 1.6 -1.3 1.6 -0.9 0 -1.4 -0.5 -1.5 -1.5 l-0.5 -6.7 c-0.1 -1.9 0.1 -3.7 0.6 -5.8 l1.7 -7.4 c0.5 -2.1 1.6 -3.5 3.4 -4.3 z"/>
+          <path d="M22.1 17.4 c0.9 0.5 1.5 1.3 1.8 2.5 l1.6 7.2 c0.4 1.9 0.6 3.4 0.5 5 l-0.4 6.6 c-0.1 1 0.4 1.6 1.3 1.6 0.9 0 1.4 -0.5 1.5 -1.5 l0.5 -6.7 c0.1 -1.9 -0.1 -3.7 -0.6 -5.8 l-1.7 -7.4 c-0.5 -2.1 -1.6 -3.5 -3.4 -4.3 z"/>
+          <!-- legs: thigh tapering to ankle, with a small gap between them -->
+          <path d="M8.7 44.3 h5.5 l-0.2 21.8 -0.5 20.4 -0.2 10.4 c0 1 -0.7 1.6 -1.9 1.6 -1.2 0 -1.9 -0.6 -1.9 -1.6 l-0.3 -10.4 -0.4 -20.4 z"/>
+          <path d="M21.3 44.3 h-5.5 l0.2 21.8 0.5 20.4 0.2 10.4 c0 1 0.7 1.6 1.9 1.6 1.2 0 1.9 -0.6 1.9 -1.6 l0.3 -10.4 0.4 -20.4 z"/>
+          <!-- feet -->
+          <path d="M8.6 97.6 h5.2 c0.5 0 0.8 0.3 0.8 0.8 v0.8 c0 0.5 -0.3 0.8 -0.8 0.8 h-5.2 c-0.5 0 -0.8 -0.3 -0.8 -0.8 v-0.8 c0 -0.5 0.3 -0.8 0.8 -0.8 z"/>
+          <path d="M21.4 97.6 h-5.2 c-0.5 0 -0.8 0.3 -0.8 0.8 v0.8 c0 0.5 0.3 0.8 0.8 0.8 h5.2 c0.5 0 0.8 -0.3 0.8 -0.8 v-0.8 c0 -0.5 -0.3 -0.8 -0.8 -0.8 z"/>
+        </g>
       </svg>
       <div class="silhouette-label">5'9" reference</div>
     </div>
@@ -343,12 +367,8 @@
         <div class="light-shadow"></div>
         <div class="sheen"></div>
         <div class="light-highlight"></div>
-        <div class="magnet tl"></div>
-        <div class="magnet tr"></div>
-        <div class="magnet bl"></div>
-        <div class="magnet br"></div>
         <div class="frame-border" style="display:none;"></div>
-        <div class="mat" style="display:none;"><img src="" alt=""></div>
+        <div class="frame-inner" style="display:none;"><img src="" alt=""></div>
         <div class="edge-right" id="edgeRight"></div>
         <div class="edge-bottom" id="edgeBottom"></div>
       </div>
@@ -456,9 +476,9 @@
 
   const printEl = document.getElementById('printEl');
   const printImg = document.getElementById('printImg');
-  const matImg = document.querySelector('.mat img');
+  const innerImg = document.querySelector('.frame-inner img');
   const frameBorder = document.querySelector('.frame-border');
-  const matDiv = document.querySelector('.mat');
+  const frameInner = document.querySelector('.frame-inner');
   const priceDisplay = document.getElementById('priceDisplay');
   const sizeNote = document.getElementById('sizeNote');
   const silSvg = document.getElementById('silSvg');
@@ -595,7 +615,7 @@
     printEl.style.height = (hIn * pxPerInch) + 'px';
 
     // real thickness per material — paper is nearly flat, metal has slight rigidity,
-    // a framed poster has genuine depth (mat + glass + the frame itself)
+    // a framed poster has genuine depth (glass + backing + the frame itself)
     const wPx = wIn * pxPerInch;
     const hPx = hIn * pxPerInch;
     const depth = state.finish === 'framed' ? 24 : state.finish === 'metal' ? 8 : 4;
@@ -612,21 +632,23 @@
     const frameInches = 0.9;
     const framePx = Math.max(3, frameInches * pxPerInch);
     frameBorder.style.borderWidth = framePx + 'px';
-    matDiv.style.inset = framePx + 'px';
+    frameInner.style.inset = framePx + 'px';
 
-    // moderate black mat: ~0.5in of matting between the frame and the photo,
+    // the frame's inner black border — ~0.5in of moulding lip around the photo,
     // scaled off the same real-world pxPerInch so it stays proportional at any size
-    const matInches = 0.5;
-    const matPx = Math.max(2, matInches * pxPerInch);
-    matDiv.style.padding = matPx + 'px';
+    const innerBorderInches = 0.5;
+    const innerBorderPx = Math.max(2, innerBorderInches * pxPerInch);
+    frameInner.style.padding = innerBorderPx + 'px';
 
     if (!isZoomed) {
       // silhouette scales off the SAME pxPerInch, and BOTH width and height update
       // (the original bug: only height was ever set, so the SVG stayed squashed to its
-      // native 34px width no matter how tall it got — fixed by scaling both dimensions
-      // together off the SVG's real 34:100 aspect ratio)
+      // native width no matter how tall it got — fixed by scaling both dimensions
+      // together off the SVG's real 30:100 viewBox aspect ratio; keep these in sync
+      // if the viewBox ever changes)
+      const SIL_ASPECT = 30 / 100;
       const silHeightPx = PERSON_HEIGHT_IN * pxPerInch;
-      const silWidthPx = silHeightPx * (34 / 100);
+      const silWidthPx = silHeightPx * SIL_ASPECT;
       silSvg.setAttribute('width', silWidthPx);
       silSvg.setAttribute('height', silHeightPx);
       silSvg.style.width = silWidthPx + 'px';
@@ -651,7 +673,7 @@
     // image (verse pairing swaps the shown photo)
     const imgSrc = displayImg();
     printImg.src = imgSrc;
-    matImg.src = imgSrc;
+    innerImg.src = imgSrc;
 
     // size scaling — proportional to real inches, dynamically fit to whichever stage is active
     applySize();
@@ -660,7 +682,7 @@
     printEl.classList.remove('poster', 'metal', 'framed');
     printEl.classList.add(state.finish);
     frameBorder.style.display = state.finish === 'framed' ? 'block' : 'none';
-    matDiv.style.display = state.finish === 'framed' ? 'flex' : 'none';
+    frameInner.style.display = state.finish === 'framed' ? 'flex' : 'none';
     printImg.style.display = state.finish === 'framed' ? 'none' : 'block';
 
     // price
