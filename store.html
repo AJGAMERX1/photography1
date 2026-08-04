@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prints — Photography by Anaiah Oliver</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@400;600&family=Great+Vibes&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg: #faf9f6;
@@ -186,6 +186,83 @@
   .print.framed .frame-inner img{ width:100%; height:100%; object-fit:cover; }
 
   .print.poster{ box-shadow:0 18px 30px rgba(28,27,25,0.14); }
+
+  /* --- Scripture overlay: live DOM text laid over the photo, NOT a canvas.
+       Canvas is deliberately avoided here for two reasons: the rest of this
+       mockup is pure CSS/JS, and a <canvas> can be right-click-saved as an
+       image, which is exactly what we don't want to offer the visitor.
+       All sizing is driven from JS off the print's real pixel height so the
+       verse scales with the print at every size and in the lightbox. --- */
+  .verse-overlay{
+    position:absolute; inset:0; z-index:3;
+    display:flex; flex-direction:column;
+    padding:6%;
+    pointer-events:none;
+    text-align:center;
+    line-height:1.4;
+    overflow:hidden;
+  }
+  .verse-overlay.empty{ display:none; }
+  .verse-body{ white-space:pre-wrap; }
+  .verse-ref{ margin-top:0.9em; font-size:0.65em; letter-spacing:0.04em; }
+  .verse-ref.hidden{ display:none; }
+
+  /* horizontal placement */
+  .verse-overlay[data-h="left"]{ align-items:flex-start; text-align:left; }
+  .verse-overlay[data-h="center"]{ align-items:center; text-align:center; }
+  .verse-overlay[data-h="right"]{ align-items:flex-end; text-align:right; }
+  /* vertical placement */
+  .verse-overlay[data-v="top"]{ justify-content:flex-start; }
+  .verse-overlay[data-v="middle"]{ justify-content:center; }
+  .verse-overlay[data-v="bottom"]{ justify-content:flex-end; }
+
+  /* --- Verse designer controls --- */
+  .verse-panel{ border-top:1px solid var(--line); margin-top:0.4rem; padding-top:1.4rem; }
+  .verse-panel textarea, .verse-panel input[type="text"], .verse-panel select{
+    width:100%; font-family:'Inter',sans-serif; font-size:0.82rem; color:var(--ink);
+    background:var(--bg); border:1px solid var(--line); border-radius:2px;
+    padding:0.55rem 0.65rem; outline:none; transition:border-color 0.15s ease;
+  }
+  .verse-panel textarea{ resize:vertical; min-height:74px; line-height:1.5; }
+  .verse-panel textarea:focus, .verse-panel input[type="text"]:focus, .verse-panel select:focus{
+    border-color:var(--ink-soft);
+  }
+  .verse-panel select{ cursor:pointer; }
+  .slider-row{ display:flex; align-items:center; gap:0.7rem; }
+  .slider-row input[type="range"]{
+    flex:1; -webkit-appearance:none; appearance:none;
+    height:2px; background:var(--line); border-radius:2px; outline:none; cursor:pointer;
+  }
+  .slider-row input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:13px; height:13px; border-radius:50%;
+    background:var(--ink); cursor:pointer;
+  }
+  .slider-row input[type="range"]::-moz-range-thumb{
+    width:13px; height:13px; border-radius:50%; background:var(--ink);
+    border:none; cursor:pointer;
+  }
+  .slider-val{
+    font-size:0.72rem; color:var(--ink-soft); min-width:38px;
+    text-align:right; font-variant-numeric:tabular-nums;
+  }
+  .swatch-row{ display:flex; gap:0.5rem; }
+  .swatch{
+    width:26px; height:26px; border-radius:50%; cursor:pointer;
+    border:1px solid var(--line); transition:transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .swatch:hover{ transform:scale(1.1); }
+  .swatch.on{ box-shadow:0 0 0 2px var(--bg), 0 0 0 3px var(--ink); }
+  .pos-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:0.3rem; max-width:150px; }
+  .pos-btn{
+    aspect-ratio:1; background:var(--bg); border:1px solid var(--line); border-radius:2px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    font-size:0.8rem; color:var(--ink-soft); transition:all 0.14s ease;
+  }
+  .pos-btn:hover{ border-color:var(--ink-soft); color:var(--ink); }
+  .pos-btn.active{ background:var(--ink); border-color:var(--ink); color:var(--bg); }
+  .verse-note{
+    font-size:0.7rem; color:var(--ink-soft); line-height:1.6; margin-top:0.9rem;
+  }
 
   /* --- Depth edges: give the print real thickness so it reads as an object,
        not a flat plane rotating in space. Sized/positioned dynamically in JS
@@ -369,6 +446,10 @@
         <div class="light-highlight"></div>
         <div class="frame-border" style="display:none;"></div>
         <div class="frame-inner" style="display:none;"><img src="" alt=""></div>
+        <div class="verse-overlay empty" id="verseOverlay" data-h="center" data-v="bottom">
+          <div class="verse-body" id="verseBody"></div>
+          <div class="verse-ref hidden" id="verseRefLine"></div>
+        </div>
         <div class="edge-right" id="edgeRight"></div>
         <div class="edge-bottom" id="edgeBottom"></div>
       </div>
@@ -393,9 +474,71 @@
       <div class="option-row" id="sizeRow"></div>
     </div>
 
-    <div class="field">
-      <span class="field-label">Scripture pairing (optional, no extra cost)</span>
-      <div class="option-row" id="scriptureRow"></div>
+    <div class="verse-panel">
+      <span class="field-label">Add a verse (optional, no extra cost)</span>
+
+      <label class="field-label" style="margin-top:0.9rem;">Pick a verse</label>
+      <select id="versePick">
+        <option value="">— Common verses —</option>
+      </select>
+
+      <label class="field-label" style="margin-top:0.9rem;">Verse text</label>
+      <textarea id="verseText" placeholder="Be still, and know that I am God."></textarea>
+
+      <label class="field-label" style="margin-top:0.9rem;">Reference</label>
+      <input type="text" id="verseRefInput" placeholder="Psalm 46:10">
+
+      <label class="field-label" style="margin-top:1.2rem;">Lettering</label>
+      <select id="verseFont">
+        <option value="'Cormorant Garamond', serif">Cormorant Garamond — refined serif</option>
+        <option value="'Playfair Display', serif">Playfair Display — editorial</option>
+        <option value="'Cinzel', serif">Cinzel — Roman capitals</option>
+        <option value="'Great Vibes', cursive">Great Vibes — flowing script</option>
+        <option value="'Montserrat', sans-serif">Montserrat — modern sans</option>
+      </select>
+
+      <label class="field-label" style="margin-top:1.2rem;">Size</label>
+      <div class="slider-row">
+        <input type="range" id="verseSize" min="1.5" max="9" step="0.1" value="4">
+        <span class="slider-val" id="verseSizeVal">4.0%</span>
+      </div>
+
+      <label class="field-label" style="margin-top:1.2rem;">Opacity</label>
+      <div class="slider-row">
+        <input type="range" id="verseOpacity" min="0.2" max="1" step="0.05" value="1">
+        <span class="slider-val" id="verseOpacityVal">100%</span>
+      </div>
+
+      <label class="field-label" style="margin-top:1.2rem;">Ink</label>
+      <div class="swatch-row" id="verseColors">
+        <div class="swatch on" data-color="#ffffff" style="background:#ffffff" title="White"></div>
+        <div class="swatch" data-color="#f5f0e8" style="background:#f5f0e8" title="Cream"></div>
+        <div class="swatch" data-color="#c9a84c" style="background:#c9a84c" title="Gold"></div>
+        <div class="swatch" data-color="#1c1b19" style="background:#1c1b19" title="Black"></div>
+      </div>
+
+      <label class="field-label" style="margin-top:1.2rem;">Placement</label>
+      <div class="pos-grid" id="versePos">
+        <div class="pos-btn" data-h="left"   data-v="top">↖</div>
+        <div class="pos-btn" data-h="center" data-v="top">↑</div>
+        <div class="pos-btn" data-h="right"  data-v="top">↗</div>
+        <div class="pos-btn" data-h="left"   data-v="middle">←</div>
+        <div class="pos-btn" data-h="center" data-v="middle">⊙</div>
+        <div class="pos-btn" data-h="right"  data-v="middle">→</div>
+        <div class="pos-btn" data-h="left"   data-v="bottom">↙</div>
+        <div class="pos-btn active" data-h="center" data-v="bottom">↓</div>
+        <div class="pos-btn" data-h="right"  data-v="bottom">↘</div>
+      </div>
+
+      <label class="option-btn" style="display:flex;align-items:center;gap:0.6rem;margin-top:1.2rem;width:fit-content;">
+        <input type="checkbox" id="verseShadow" checked style="accent-color:var(--ink);">
+        <span>Soft shadow behind text</span>
+      </label>
+
+      <div class="verse-note">
+        This is a preview of how your print will be laid out. Anaiah sets the final
+        type by hand from these choices before anything goes to print.
+      </div>
     </div>
 
     <div class="price-row">
@@ -469,10 +612,31 @@
 
   const FINISH_LABEL = { poster: 'Poster', metal: 'Metal Print', framed: 'Framed Poster' };
 
-  // ---- Selected photo + verse state ----
-  // state.verse is 'none' or the index into STORE_VERSES.
+  // ---- Common verses offered in the picker (visitor can also type their own) ----
+  const COMMON_VERSES = [
+    ['Be still, and know that I am God.', 'Psalm 46:10'],
+    ['The heavens declare the glory of God; the skies proclaim the work of his hands.', 'Psalm 19:1'],
+    ['The Lord is my shepherd, I lack nothing.', 'Psalm 23:1'],
+    ['For God so loved the world that he gave his one and only Son.', 'John 3:16'],
+    ['I can do all this through him who gives me strength.', 'Philippians 4:13'],
+    ['Trust in the Lord with all your heart and lean not on your own understanding.', 'Proverbs 3:5'],
+    ['Do not fear, for I am with you; do not be dismayed, for I am your God.', 'Isaiah 41:10'],
+    ['For I know the plans I have for you, declares the Lord.', 'Jeremiah 29:11'],
+    ['The Lord is my light and my salvation — whom shall I fear?', 'Psalm 27:1'],
+    ['Give thanks to the Lord, for he is good; his love endures forever.', 'Psalm 107:1'],
+    ['He gives strength to the weary and increases the power of the weak.', 'Isaiah 40:29'],
+    ['The Lord bless you and keep you; the Lord make his face shine on you.', 'Numbers 6:24–25']
+  ];
+
+  // ---- Selected photo + verse overlay state ----
   let selectedPhoto = null;
-  let state = { finish: 'poster', size: '16x20', verse: 'none' };
+  let state = { finish: 'poster', size: '16x20' };
+  const verse = {
+    text: '', ref: '',
+    font: "'Cormorant Garamond', serif",
+    size: 4, opacity: 1, color: '#ffffff',
+    h: 'center', v: 'bottom', shadow: true
+  };
 
   const printEl = document.getElementById('printEl');
   const printImg = document.getElementById('printImg');
@@ -511,9 +675,7 @@
   // The image currently shown on the print: the selected photo, unless a scripture
   // pairing is chosen, in which case the paired verse photo is shown instead.
   function displayImg(){
-    if (!selectedPhoto) return '';
-    if (state.verse !== 'none' && STORE_VERSES[state.verse]) return STORE_VERSES[state.verse].full;
-    return selectedPhoto.full;
+    return selectedPhoto ? selectedPhoto.full : '';
   }
 
   // ---- Photo picker grid + camera filter ----
@@ -555,33 +717,116 @@
 
   function selectPhoto(photo){
     selectedPhoto = photo;
-    state.verse = 'none'; // reset any pairing when switching photos
     photoTitle.textContent = prettyLabel(photo.label);
     photoMeta.textContent = (CAMERA_LABEL[photo.cam] || photo.cam) + ' · ' + photo.theme;
-    buildScriptureRow();
     buildPicker();
     refresh();
   }
 
-  // Scripture pairing row is built from STORE_VERSES (photos in a "bible" folder).
-  // Labeled generically Verse 1..N since we can't auto-detect the actual verse pictured.
-  function buildScriptureRow(){
-    const row = document.getElementById('scriptureRow');
-    row.innerHTML = '';
-    const noneBtn = document.createElement('button');
-    noneBtn.className = 'option-btn' + (state.verse === 'none' ? ' active' : '');
-    noneBtn.textContent = 'None';
-    noneBtn.dataset.verse = 'none';
-    noneBtn.addEventListener('click', () => { state.verse = 'none'; refresh(); });
-    row.appendChild(noneBtn);
+  // ---- Scripture overlay ----------------------------------------------------
+  // The visitor composes the verse live over their chosen photo. This is a
+  // LAYOUT PREVIEW, not a deliverable: there is deliberately no export, no
+  // download and no canvas anywhere in this path.
+  const verseOverlay  = document.getElementById('verseOverlay');
+  const verseBody     = document.getElementById('verseBody');
+  const verseRefLine  = document.getElementById('verseRefLine');
 
-    STORE_VERSES.forEach((v, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'option-btn' + (state.verse === i ? ' active' : '');
-      btn.textContent = v.label;
-      btn.dataset.verse = i;
-      btn.addEventListener('click', () => { state.verse = i; refresh(); });
-      row.appendChild(btn);
+  function buildVersePicker(){
+    const sel = document.getElementById('versePick');
+    COMMON_VERSES.forEach(([text, ref]) => {
+      const opt = document.createElement('option');
+      opt.value = text + '|' + ref;
+      opt.textContent = ref;
+      sel.appendChild(opt);
+    });
+  }
+
+  // Type scales off the print's real rendered height, so the verse keeps its
+  // proportion whether the print is an 8x12 on the card or a 24x36 in the
+  // lightbox. Called from applySize(), which is where the print gets resized.
+  function applyVerseLayout(){
+    const hPx = parseFloat(printEl.style.height) || printEl.getBoundingClientRect().height;
+    if (!hPx) return;
+    verseOverlay.style.fontSize = (hPx * (verse.size / 100)) + 'px';
+  }
+
+  function renderVerse(){
+    const hasText = !!(verse.text.trim() || verse.ref.trim());
+    verseOverlay.classList.toggle('empty', !hasText);
+    if (!hasText) return;
+
+    verseBody.textContent = verse.text;
+    verseRefLine.textContent = verse.ref ? '— ' + verse.ref : '';
+    verseRefLine.classList.toggle('hidden', !verse.ref.trim());
+
+    verseOverlay.style.fontFamily = verse.font;
+    verseOverlay.style.color = verse.color;
+    verseOverlay.style.opacity = verse.opacity;
+    verseOverlay.dataset.h = verse.h;
+    verseOverlay.dataset.v = verse.v;
+    // shadow scales with the type so it stays proportional at any print size
+    verseOverlay.style.textShadow = verse.shadow
+      ? '0 0.03em 0.14em rgba(0,0,0,0.55), 0 0 0.5em rgba(0,0,0,0.35)'
+      : 'none';
+
+    applyVerseLayout();
+  }
+
+  function wireVerseControls(){
+    const pick = document.getElementById('versePick');
+    const textEl = document.getElementById('verseText');
+    const refEl = document.getElementById('verseRefInput');
+
+    pick.addEventListener('change', function(){
+      if (!this.value) return;
+      const [t, r] = this.value.split('|');
+      verse.text = t; verse.ref = r;
+      textEl.value = t; refEl.value = r;
+      this.value = '';
+      renderVerse(); refresh();
+    });
+
+    textEl.addEventListener('input', () => { verse.text = textEl.value; renderVerse(); refresh(); });
+    refEl.addEventListener('input', () => { verse.ref = refEl.value; renderVerse(); refresh(); });
+
+    document.getElementById('verseFont').addEventListener('change', function(){
+      verse.font = this.value; renderVerse(); refresh();
+    });
+
+    const sizeEl = document.getElementById('verseSize');
+    sizeEl.addEventListener('input', function(){
+      verse.size = parseFloat(this.value);
+      document.getElementById('verseSizeVal').textContent = verse.size.toFixed(1) + '%';
+      renderVerse(); refresh();
+    });
+
+    const opEl = document.getElementById('verseOpacity');
+    opEl.addEventListener('input', function(){
+      verse.opacity = parseFloat(this.value);
+      document.getElementById('verseOpacityVal').textContent = Math.round(verse.opacity * 100) + '%';
+      renderVerse(); refresh();
+    });
+
+    document.querySelectorAll('#verseColors .swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        verse.color = sw.dataset.color;
+        document.querySelectorAll('#verseColors .swatch').forEach(s => s.classList.remove('on'));
+        sw.classList.add('on');
+        renderVerse(); refresh();
+      });
+    });
+
+    document.querySelectorAll('#versePos .pos-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        verse.h = btn.dataset.h; verse.v = btn.dataset.v;
+        document.querySelectorAll('#versePos .pos-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderVerse(); refresh();
+      });
+    });
+
+    document.getElementById('verseShadow').addEventListener('change', function(){
+      verse.shadow = this.checked; renderVerse(); refresh();
     });
   }
 
@@ -640,6 +885,12 @@
     const innerBorderPx = Math.max(2, innerBorderInches * pxPerInch);
     frameInner.style.padding = innerBorderPx + 'px';
 
+    // the verse sits on the photo, so for a framed print it has to pull in past
+    // the moulding and its inner border rather than covering the frame itself
+    const verseInset = state.finish === 'framed' ? (framePx + innerBorderPx) : 0;
+    verseOverlay.style.inset = verseInset + 'px';
+    applyVerseLayout();
+
     if (!isZoomed) {
       // silhouette scales off the SAME pxPerInch, and BOTH width and height update
       // (the original bug: only height was ever set, so the SVG stayed squashed to its
@@ -662,10 +913,6 @@
     // finish buttons
     document.querySelectorAll('#finishRow .option-btn').forEach(b =>
       b.classList.toggle('active', b.dataset.finish === state.finish));
-    // verse buttons
-    document.querySelectorAll('#scriptureRow .option-btn').forEach(b =>
-      b.classList.toggle('active', String(b.dataset.verse) === String(state.verse)));
-
     buildSizeOptions();
     document.querySelectorAll('#sizeRow .option-btn').forEach(b =>
       b.classList.toggle('active', b.dataset.size === state.size));
@@ -692,16 +939,32 @@
     sizeNote.textContent = wIn + '×' + hIn + ' in';
 
     // mailto
-    const verseLabel = state.verse === 'none' ? 'None' : (STORE_VERSES[state.verse].label);
     const photoName = prettyLabel(selectedPhoto.label);
     const subject = encodeURIComponent('Print Inquiry: ' + photoName);
+
+    // The visitor's verse layout is sent along as a spec so the final type can be
+    // set by hand — the preview itself is never exported or attached.
+    let verseSpec = 'Verse: none';
+    if (verse.text.trim() || verse.ref.trim()) {
+      const fontName = (verse.font.match(/'([^']+)'/) || [null, verse.font])[1];
+      verseSpec =
+        `Verse text: ${verse.text.trim() || '(none)'}\n` +
+        `Reference: ${verse.ref.trim() || '(none)'}\n` +
+        `Lettering: ${fontName}\n` +
+        `Type size: ${verse.size.toFixed(1)}% of print height\n` +
+        `Ink: ${verse.color}\n` +
+        `Opacity: ${Math.round(verse.opacity * 100)}%\n` +
+        `Placement: ${verse.v} ${verse.h}\n` +
+        `Shadow: ${verse.shadow ? 'yes' : 'no'}`;
+    }
+
     const body = encodeURIComponent(
       `Photo: ${photoName} (${CAMERA_LABEL[selectedPhoto.cam] || selectedPhoto.cam} · ${selectedPhoto.theme})\n` +
       `Image file: ${selectedPhoto.full}\n` +
       `Finish: ${FINISH_LABEL[state.finish]}\n` +
       `Size: ${state.size} in\n` +
-      `Scripture pairing: ${verseLabel}\n` +
-      `Price: $${price.toFixed(2)}`
+      `Price: $${price.toFixed(2)}\n\n` +
+      `--- Scripture layout ---\n${verseSpec}`
     );
     requestBtn.href = `mailto:anaiaholiverphotography@gmail.com?subject=${subject}&body=${body}`;
   }
@@ -839,6 +1102,15 @@
     return STORE_PHOTOS[0] || null;
   }
 
+  // Right-click "Save image as…" is the obvious way to lift a photo out of the
+  // page, so block the context menu across the preview and picker. This is
+  // friction, not DRM — see the note in the panel.
+  [stageEl, lightbox, pickerGrid].forEach(el => {
+    el.addEventListener('contextmenu', e => e.preventDefault());
+  });
+
+  buildVersePicker();
+  wireVerseControls();
   buildCameraFilters();
   applyRotation();
   const first = initialPhoto();
