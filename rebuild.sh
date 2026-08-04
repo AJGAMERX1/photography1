@@ -65,6 +65,17 @@ import os, json
 
 CAMERA_LABEL = { 'r6ii': 'Canon R6 Mark II', '7d': 'Canon 7D', 'g7x': 'PowerShot G7 X Mark II' }
 
+# Hand-maintained filename -> verse reference map. There's no way to detect which
+# verse a photo actually shows, so this is the one place that knowledge lives.
+# Anything missing or blank falls back to a generic "Verse N".
+VERSE_LABELS = {}
+if os.path.exists('verses.json'):
+    with open('verses.json') as fh:
+        VERSE_LABELS = {
+            k: v for k, v in json.load(fh).items()
+            if not k.startswith('_') and v.strip()
+        }
+
 photos = []
 verses = []
 verse_count = 0
@@ -88,7 +99,7 @@ for cam in sorted(os.listdir('images/fulls')):
                 verse_count += 1
                 verses.append({
                     "full": full,
-                    "label": f"Verse {verse_count}"
+                    "label": VERSE_LABELS.get(fname, f"Verse {verse_count}")
                 })
 
 with open('store-data.js', 'w') as fh:
@@ -97,7 +108,10 @@ with open('store-data.js', 'w') as fh:
     fh.write("const STORE_PHOTOS = " + json.dumps(photos, indent=2) + ";\n")
     fh.write("const STORE_VERSES = " + json.dumps(verses, indent=2) + ";\n")
 
-print(f"store-data.js: {len(photos)} photos, {len(verses)} verse pairings.")
+named = sum(1 for v in verses if not v['label'].startswith('Verse '))
+print(f"store-data.js: {len(photos)} photos, {len(verses)} verse pairings ({named} named, {len(verses)-named} unnamed).")
+if named < len(verses):
+    print("  -> add the missing verse references in verses.json, then re-run.")
 PYEOF
 
 echo "Cleaning up loose files in images/ root..."

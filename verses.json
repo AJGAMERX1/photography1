@@ -1,0 +1,9 @@
+{
+  "_comment": "Maps a bible-folder photo filename to the verse pictured in it. Edit this by hand, then run ./rebuild.sh. Any file not listed here falls back to a generic 'Verse N' label. Keys are just the filename, not the full path.",
+
+  "799A3891 10.56.11 AM.jpg": "",
+  "799A4061.jpg": "",
+  "799A4062.jpg": "",
+  "799A4064.jpg": "",
+  "799A4068-2.jpg": ""
+}
