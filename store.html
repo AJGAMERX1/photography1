@@ -101,6 +101,15 @@
       0 0.6vw 1.4vw rgba(0,0,0,0.34),
       0 0.15vw 0.4vw rgba(0,0,0,0.30);
   }
+  /* in room mode the print can be small, so the zoom control moves off the
+     artwork and docks to the scene's corner instead of covering it */
+  .stage.room-mode .zoom-btn{
+    position:absolute; top:auto; right:auto;
+    left:calc(100% + 10px); bottom:-6px;
+    width:32px; height:32px;
+    background:rgba(28,27,25,0.72);
+  }
+  .stage.room-mode .print-wrap:hover .zoom-btn{ background:var(--ink); }
   .room-credit{
     position:absolute; bottom:6px; right:8px; z-index:4;
     font-size:0.58rem; letter-spacing:0.03em;
@@ -622,15 +631,15 @@
   //   rotateY / rotateX     — match the wall's perspective. 0/0 for a wall shot
   //                           straight on; a few degrees if the camera was angled.
   const ROOM = {
-    src: null,               // e.g. 'images/room/living-room.jpg'
+    src: 'images/room/living-room.jpg',   // CC0 — see images/room/README.md
     naturalWidth: 1,         // filled in on load
-    anchorXPct: 50,
-    anchorYPct: 38,
-    pxPerInchAtWall: 12,
-    rotateY: 0,
+    anchorXPct: 68,          // blank wall above the sideboard, left of the TV
+    anchorYPct: 27,
+    pxPerInchAtWall: 8.75,   // measured on the 1600px-wide file
+    rotateY: -9,             // that wall recedes slightly to the right
     rotateX: 0,
-    creditText: '',
-    creditHref: ''
+    creditText: 'Room: Jarosław Ceborski · CC0',
+    creditHref: 'https://commons.wikimedia.org/wiki/File:Living_room_(Unsplash).jpg'
   };
   let roomReady = false;
 

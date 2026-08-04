@@ -36,11 +36,20 @@ and it renders as a small link in the corner of the scene.
 
 | Field | Value |
 |---|---|
-| File | _(none yet)_ |
-| Source URL | |
-| Photographer | |
-| Licence | |
-| Date added | |
+| File | `living-room.jpg` (1600x1068, resized/stripped from the 5346x3568 original) |
+| Source URL | https://commons.wikimedia.org/wiki/File:Living_room_(Unsplash).jpg |
+| Photographer | Jarosław Ceborski |
+| Licence | **CC0 1.0 Universal Public Domain Dedication** — published to Unsplash before 5 June 2017, when Unsplash still released under CC0. No restrictions, no attribution required. |
+| Date added | 2026-08-03 |
+
+Credit is shown in the corner of the scene as a courtesy, not an obligation —
+CC0 requires none. Remove `ROOM.creditText` if you'd rather it not appear.
+
+Calibration in use: `pxPerInchAtWall: 8.75`, anchored at 68% / 27% on the blank
+wall left of the TV, `rotateY: -9` for that wall's slight recession. The
+px-per-inch was estimated from the wall height in frame, so it's a close
+approximation rather than a survey — worth eyeballing a 24x36 against the
+sideboard if you ever swap the photo.
 
 ## Calibrating
 
