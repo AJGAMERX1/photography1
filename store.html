@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prints — Photography by Anaiah Oliver</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #faf9f6;
+    --bg-soft: #f2f0eb;
+    --ink: #1c1b19;
+    --ink-soft: #8a8680;
+    --line: #e3e0d9;
+    --wall: #ede9e2;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;
+    min-height:100vh; -webkit-font-smoothing:antialiased;
+  }
+  header{ padding:4rem 7vw 2rem; border-bottom:1px solid var(--line); }
+  h1{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(2rem,4vw,2.8rem); letter-spacing:-0.01em; }
+  .sub{ font-size:0.9rem; color:var(--ink-soft); margin-top:0.6rem; }
+
+  /* --- Photo picker grid --- */
+  .picker{ padding:2.5rem 7vw 0.5rem; }
+  .picker-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    flex-wrap:wrap; gap:0.8rem; margin-bottom:1.2rem;
+  }
+  .picker-title{
+    font-size:0.72rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft);
+  }
+  .picker-filters{ display:flex; gap:0.5rem; flex-wrap:wrap; }
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr));
+    gap:0.6rem;
+  }
+  .grid-item{
+    position:relative; aspect-ratio:1; overflow:hidden; cursor:pointer;
+    border:2px solid transparent; border-radius:2px; background:var(--bg-soft);
+    transition:border-color 0.15s ease;
+  }
+  .grid-item img{
+    width:100%; height:100%; object-fit:cover; display:block;
+    transition:transform 0.3s ease;
+  }
+  .grid-item:hover img{ transform:scale(1.05); }
+  .grid-item.selected{ border-color:var(--ink); }
+  .grid-item.selected::after{
+    content:''; position:absolute; inset:0;
+    box-shadow:inset 0 0 0 2px var(--bg);
+    pointer-events:none;
+  }
+
+  .layout{
+    display:grid; grid-template-columns:1.3fr 1fr; gap:4rem;
+    padding:3.5rem 7vw; align-items:start;
+  }
+  @media (max-width:900px){ .layout{ grid-template-columns:1fr; gap:2.5rem; } }
+
+  /* --- Mockup stage --- */
+  .stage{
+    background:var(--wall);
+    border-radius:2px;
+    padding:3rem;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    gap:2.5rem;
+    min-height:520px;
+    position:relative;
+    overflow:visible;
+  }
+
+  .silhouette{
+    flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    opacity:0.28;
+  }
+  .silhouette svg{ display:block; }
+  .silhouette-label{
+    font-size:0.62rem; letter-spacing:0.05em; text-transform:uppercase;
+    color:var(--ink); margin-top:0.4rem; opacity:0.7;
+  }
+
+  .print-wrap{
+    perspective:1200px;
+    flex-shrink:0;
+    position:relative;
+  }
+
+  .print{
+    position:relative;
+    transform-style:preserve-3d;
+    transition:width 0.35s ease, height 0.35s ease, transform 0.05s linear;
+    box-shadow:0 25px 45px rgba(28,27,25,0.18), 0 6px 12px rgba(28,27,25,0.1);
+    cursor:zoom-in;
+  }
+  .print-wrap.zoomed .print{ cursor:grab; }
+  .print-wrap.zoomed .print:active{ cursor:grabbing; }
+  .print img{
+    display:block; width:100%; height:100%; object-fit:cover;
+  }
+
+  .zoom-btn{
+    position:absolute; top:-14px; right:-14px; z-index:5;
+    width:38px; height:38px; border-radius:50%;
+    background:var(--ink); color:var(--bg); border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 10px rgba(28,27,25,0.25);
+    transition:transform 0.15s ease;
+  }
+  .zoom-btn:hover{ transform:scale(1.08); }
+
+  body.zoom-active .silhouette{ opacity:0; pointer-events:none; transition:opacity 0.2s ease; }
+
+  /* sheen overlay, moves opposite tilt */
+  .sheen{
+    position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(115deg, rgba(255,255,255,0) 35%, rgba(255,255,255,0.35) 48%, rgba(255,255,255,0) 60%);
+    background-size:250% 250%;
+    background-position:50% 50%;
+    opacity:0;
+    transition:opacity 0.2s ease, background-position 0.05s linear;
+  }
+  .print-wrap:hover .sheen{ opacity:1; }
+
+  /* light-highlight: a moving specular hotspot, as if a fixed light source reflects
+     off the surface differently depending on which way the print is turned */
+  .light-highlight{
+    position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(circle at 50% 50%, rgba(255,250,235,0) 0%, rgba(255,250,235,0) 100%);
+    mix-blend-mode:screen;
+  }
+
+  /* light-shadow: darkens the surface as it turns away from the light, so extreme
+     angles read as physically turning rather than just a flat rotated image */
+  .light-shadow{
+    position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(135deg, rgba(10,10,10,0) 0%, rgba(10,10,10,0) 100%);
+  }
+
+  /* metal-only magnet dots */
+  .magnet{
+    position:absolute; width:7px; height:7px; border-radius:50%;
+    background:rgba(0,0,0,0.35); box-shadow:inset 0 0 0 1px rgba(255,255,255,0.25);
+    display:none;
+  }
+  .print.metal .magnet{ display:block; }
+  .magnet.tl{ top:10px; left:10px; }
+  .magnet.tr{ top:10px; right:10px; }
+  .magnet.bl{ bottom:10px; left:10px; }
+  .magnet.br{ bottom:10px; right:10px; }
+
+  /* framed poster treatment */
+  .print.framed{
+    padding:0;
+  }
+  .print.framed .frame-border{
+    position:absolute; inset:0;
+    border: 14px solid #4a3a2c;
+    box-shadow:
+      inset 0 0 0 2px rgba(0,0,0,0.25),
+      inset 0 0 0 16px transparent; /* mat area, transparent for now per instruction */
+    pointer-events:none;
+  }
+  .print.framed .mat{
+    position:absolute; inset:14px;
+    background: transparent; /* margins left transparent intentionally for this test pass */
+    display:flex; align-items:center; justify-content:center;
+  }
+  .print.framed .mat img{ width:100%; height:100%; object-fit:cover; }
+
+  .print.poster{ box-shadow:0 18px 30px rgba(28,27,25,0.14); }
+
+  /* --- Depth edges: give the print real thickness so it reads as an object,
+       not a flat plane rotating in space. Sized/positioned dynamically in JS
+       since the print's own pixel dimensions change with every size pick. --- */
+  .edge-right, .edge-bottom{
+    position:absolute; pointer-events:none;
+  }
+  .edge-right{ top:0; left:0; transform-origin:left center; }
+  .edge-bottom{ top:0; left:0; transform-origin:top center; }
+  .print.poster .edge-right, .print.poster .edge-bottom{
+    background:linear-gradient(to bottom, #efece4, #cfcabf);
+  }
+  .print.metal .edge-right, .print.metal .edge-bottom{
+    background:linear-gradient(to bottom, #8a8d92, #4c4e52);
+  }
+  .print.framed .edge-right, .print.framed .edge-bottom{
+    background:linear-gradient(to bottom, #5c4934, #382b1f);
+  }
+
+  /* --- Drag handle: a visible, explicit "grab this" affordance inside the lightbox --- */
+  .drag-handle{
+    width:56px; height:56px; border-radius:50%;
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18);
+    display:flex; align-items:center; justify-content:center;
+    color:#f2f0eb; cursor:grab; margin-bottom:0.3rem;
+    transition:background 0.15s ease, transform 0.1s ease;
+  }
+  .drag-handle:hover{ background:rgba(255,255,255,0.16); }
+  .drag-handle:active{ cursor:grabbing; transform:scale(0.96); }
+  .drag-handle-label{
+    font-family:'Inter',sans-serif; font-size:0.65rem; letter-spacing:0.05em; text-transform:uppercase;
+    color:rgba(242,240,235,0.5); text-align:center; margin-bottom:1.2rem;
+  }
+
+  /* --- Lightbox --- */
+  .lightbox{
+    position:fixed; inset:0; z-index:100;
+    background:radial-gradient(circle at 50% 40%, #2a2926 0%, #131211 75%);
+    display:none; align-items:center; justify-content:center;
+    flex-direction:column; gap:1.6rem;
+  }
+  .lightbox.open{ display:flex; }
+  .lightbox-stage{
+    perspective:1600px;
+    display:flex; align-items:center; justify-content:center;
+    min-height:58vh; width:100%;
+  }
+  .lightbox-close{
+    position:absolute; top:1.6rem; right:1.8rem;
+    width:42px; height:42px; border-radius:50%;
+    background:rgba(255,255,255,0.08); color:#f2f0eb; border:1px solid rgba(255,255,255,0.15);
+    font-size:1rem; cursor:pointer; transition:background 0.15s ease;
+  }
+  .lightbox-close:hover{ background:rgba(255,255,255,0.16); }
+
+  .pan-controls{ display:flex; flex-direction:column; align-items:center; gap:0.5rem; }
+  .pan-mid-row{ display:flex; gap:0.5rem; align-items:center; }
+  .pan-btn{
+    width:42px; height:42px; border-radius:50%;
+    background:rgba(255,255,255,0.08); color:#f2f0eb; border:1px solid rgba(255,255,255,0.15);
+    font-size:1.1rem; cursor:pointer; transition:background 0.15s ease;
+  }
+  .pan-btn:hover{ background:rgba(255,255,255,0.18); }
+
+  .lightbox-hint{
+    font-family:'Inter',sans-serif; font-size:0.75rem; color:rgba(242,240,235,0.55);
+    letter-spacing:0.02em; text-align:center;
+  }
+
+  /* --- Controls --- */
+  .controls h2{
+    font-family:'Fraunces',serif; font-weight:400; font-size:1.4rem; margin-bottom:0.3rem;
+  }
+  .controls .photo-label{ font-size:0.85rem; color:var(--ink-soft); margin-bottom:2rem; }
+
+  .field{ margin-bottom:1.8rem; }
+  .field-label{
+    font-size:0.72rem; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--ink-soft); margin-bottom:0.7rem; display:block;
+  }
+
+  .option-row{ display:flex; gap:0.6rem; flex-wrap:wrap; }
+  .option-btn{
+    font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:500;
+    padding:0.6rem 1rem; border:1px solid var(--line); background:var(--bg);
+    color:var(--ink); cursor:pointer; transition:all 0.15s ease;
+  }
+  .option-btn:hover{ border-color:var(--ink-soft); }
+  .option-btn.active{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+
+  .price-row{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding:1.4rem 0; border-top:1px solid var(--line); margin-top:1rem;
+  }
+  .price{ font-family:'Fraunces',serif; font-size:1.9rem; }
+  .price-note{ font-size:0.72rem; color:var(--ink-soft); }
+
+  .cta{
+    display:block; width:100%; text-align:center;
+    background:var(--ink); color:var(--bg); font-family:'Inter',sans-serif;
+    font-size:0.85rem; font-weight:500; letter-spacing:0.03em; text-transform:uppercase;
+    padding:1rem; text-decoration:none; margin-top:1rem; transition:opacity 0.15s ease;
+  }
+  .cta:hover{ opacity:0.85; }
+  .fallback-note{
+    font-size:0.72rem; color:var(--ink-soft); margin-top:0.7rem; text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Prints</h1>
+  <div class="sub">Choose a photo, then a finish, size, and optional scripture pairing.</div>
+</header>
+
+<!-- --- Photo picker: filterable grid, click a photo to configure it as a print --- -->
+<section class="picker">
+  <div class="picker-head">
+    <span class="picker-title">Choose a photo</span>
+    <div class="picker-filters" id="cameraFilters"></div>
+  </div>
+  <div class="grid" id="pickerGrid"></div>
+</section>
+
+<div class="layout">
+
+  <div class="stage" id="stage">
+    <div class="silhouette">
+      <svg id="silSvg" width="34" height="0" viewBox="0 0 34 100" fill="none">
+        <path d="M17 0 C21 0 24 3 24 8 C24 12 22 14 20 15 L20 18 C26 20 30 26 30 34 L30 60 C30 63 28 65 25 65 L25 95 C25 98 23 100 20 100 L14 100 C11 100 9 98 9 95 L9 65 C6 65 4 63 4 60 L4 34 C4 26 8 20 14 18 L14 15 C12 14 10 12 10 8 C10 3 13 0 17 0 Z" fill="#1c1b19"/>
+      </svg>
+      <div class="silhouette-label">5'9" reference</div>
+    </div>
+
+    <div class="print-wrap" id="printWrap">
+      <button class="zoom-btn" id="zoomBtn" aria-label="View full and rotate" title="View full and rotate">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+        </svg>
+      </button>
+      <div class="print poster" id="printEl">
+        <img id="printImg" src="" alt="Print preview">
+        <div class="light-shadow"></div>
+        <div class="sheen"></div>
+        <div class="light-highlight"></div>
+        <div class="magnet tl"></div>
+        <div class="magnet tr"></div>
+        <div class="magnet bl"></div>
+        <div class="magnet br"></div>
+        <div class="frame-border" style="display:none;"></div>
+        <div class="mat" style="display:none;"><img src="" alt=""></div>
+        <div class="edge-right" id="edgeRight"></div>
+        <div class="edge-bottom" id="edgeBottom"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <h2 id="photoTitle">Select a photo</h2>
+    <div class="photo-label" id="photoMeta">Pick any image above to begin.</div>
+
+    <div class="field">
+      <span class="field-label">Finish</span>
+      <div class="option-row" id="finishRow">
+        <button class="option-btn active" data-finish="poster">Poster</button>
+        <button class="option-btn" data-finish="metal">Metal</button>
+        <button class="option-btn" data-finish="framed">Framed Poster</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">Size</span>
+      <div class="option-row" id="sizeRow"></div>
+    </div>
+
+    <div class="field">
+      <span class="field-label">Scripture pairing (optional, no extra cost)</span>
+      <div class="option-row" id="scriptureRow"></div>
+    </div>
+
+    <div class="price-row">
+      <span class="price" id="priceDisplay">$16.00</span>
+      <span class="price-note" id="sizeNote">16×20 in</span>
+    </div>
+
+    <a href="#" class="cta" id="requestBtn">Request this print</a>
+    <div class="fallback-note">Opens your email app, pre-filled — nothing sends automatically.</div>
+  </div>
+
+</div>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose" aria-label="Close">✕</button>
+  <div class="lightbox-stage" id="lightboxStage"></div>
+  <div class="drag-handle" id="dragHandle" aria-label="Drag to rotate">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/>
+      <polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/>
+      <line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/>
+    </svg>
+  </div>
+  <div class="drag-handle-label">drag to rotate</div>
+  <div class="pan-controls">
+    <button class="pan-btn" data-dir="up" aria-label="Pan up">↑</button>
+    <div class="pan-mid-row">
+      <button class="pan-btn" data-dir="left" aria-label="Pan left">←</button>
+      <button class="pan-btn" id="panReset" aria-label="Reset view">⟳</button>
+      <button class="pan-btn" data-dir="right" aria-label="Pan right">→</button>
+    </div>
+    <button class="pan-btn" data-dir="down" aria-label="Pan down">↓</button>
+  </div>
+  <div class="lightbox-hint">Drag the print, or use the arrows — the lighting shifts as you turn it.</div>
+</div>
+
+<script src="store-data.js"></script>
+<script>
+  // ---- Pricing data, from CanvasDiscount cost sheet ----
+  // Poster/Metal come straight from the cost sheet. Framed = poster + a size-scaled
+  // frame cost (real single-unit frame retail: ~$9 at 8x12 up to ~$58 at 24x36),
+  // NO extra markup yet — explicit test pass, real margins TBD.
+  const PRICING = {
+    poster: {
+      '8x12': 5.20, '12x12': 10.67, '12x16': 13.33, '16x20': 16.00,
+      '16x24': 18.67, '20x20': 20.00, '12x36': 21.33, '20x24': 22.67,
+      '20x30': 22.67, '24x36': 25.33
+    },
+    metal: {
+      '8x8': 12.00, '8x10': 20.00, '8x12': 21.33, '11x14': 34.67,
+      '12x16': 36.00, '12x18': 46.67, '16x20': 65.33, '16x24': 66.67,
+      '18x24': 76.00, '20x24': 116.00, '20x30': 122.67, '24x30': 133.33,
+      '24x36': 140.00, '30x40': 237.33
+    },
+    framed: {} // derived below: poster price + size-scaled frame cost
+  };
+  // Size-scaled frame cost — interpolated by print area (sq in) between real
+  // single-unit frame retail anchors, so large frames aren't underpriced the way
+  // a single flat add would leave them.
+  function frameCost(size){
+    const [w, h] = size.split('x').map(Number);
+    const area = w * h;
+    const A_MIN = 8 * 12,  C_MIN = 9;    // ~$9 frame at 8x12
+    const A_MAX = 24 * 36, C_MAX = 58;   // ~$58 frame at 24x36
+    const t = Math.max(0, Math.min(1, (area - A_MIN) / (A_MAX - A_MIN)));
+    return C_MIN + t * (C_MAX - C_MIN);
+  }
+  for (const size in PRICING.poster) {
+    PRICING.framed[size] = +(PRICING.poster[size] + frameCost(size)).toFixed(2);
+  }
+
+  const FINISH_LABEL = { poster: 'Poster', metal: 'Metal Print', framed: 'Framed Poster' };
+
+  // ---- Selected photo + verse state ----
+  // state.verse is 'none' or the index into STORE_VERSES.
+  let selectedPhoto = null;
+  let state = { finish: 'poster', size: '16x20', verse: 'none' };
+
+  const printEl = document.getElementById('printEl');
+  const printImg = document.getElementById('printImg');
+  const matImg = document.querySelector('.mat img');
+  const frameBorder = document.querySelector('.frame-border');
+  const matDiv = document.querySelector('.mat');
+  const priceDisplay = document.getElementById('priceDisplay');
+  const sizeNote = document.getElementById('sizeNote');
+  const silSvg = document.getElementById('silSvg');
+  const requestBtn = document.getElementById('requestBtn');
+  const printWrap = document.getElementById('printWrap');
+  const zoomBtn = document.getElementById('zoomBtn');
+  const sheen = document.querySelector('.sheen');
+  const lightHighlight = document.querySelector('.light-highlight');
+  const lightShadow = document.querySelector('.light-shadow');
+  const stageEl = document.getElementById('stage');
+  const lightbox = document.getElementById('lightbox');
+  const lightboxStage = document.getElementById('lightboxStage');
+  const lightboxClose = document.getElementById('lightboxClose');
+  const panReset = document.getElementById('panReset');
+  const edgeRight = document.getElementById('edgeRight');
+  const edgeBottom = document.getElementById('edgeBottom');
+  const dragHandle = document.getElementById('dragHandle');
+  const pickerGrid = document.getElementById('pickerGrid');
+  const cameraFilters = document.getElementById('cameraFilters');
+  const photoTitle = document.getElementById('photoTitle');
+  const photoMeta = document.getElementById('photoMeta');
+
+  let isZoomed = false;
+
+  // Turn a filename-ish label into something readable, e.g. "MG_7851" -> "MG 7851"
+  function prettyLabel(label){
+    return label.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  // The image currently shown on the print: the selected photo, unless a scripture
+  // pairing is chosen, in which case the paired verse photo is shown instead.
+  function displayImg(){
+    if (!selectedPhoto) return '';
+    if (state.verse !== 'none' && STORE_VERSES[state.verse]) return STORE_VERSES[state.verse].full;
+    return selectedPhoto.full;
+  }
+
+  // ---- Photo picker grid + camera filter ----
+  let cameraFilter = 'all';
+
+  function buildCameraFilters(){
+    const cams = [];
+    STORE_PHOTOS.forEach(p => { if (!cams.includes(p.cam)) cams.push(p.cam); });
+    const makeBtn = (val, text) => {
+      const b = document.createElement('button');
+      b.className = 'option-btn' + (val === cameraFilter ? ' active' : '');
+      b.textContent = text;
+      b.dataset.cam = val;
+      b.addEventListener('click', () => { cameraFilter = val; buildCameraFilters(); buildPicker(); });
+      return b;
+    };
+    cameraFilters.innerHTML = '';
+    cameraFilters.appendChild(makeBtn('all', 'All'));
+    cams.forEach(c => cameraFilters.appendChild(makeBtn(c, CAMERA_LABEL[c] || c)));
+  }
+
+  function buildPicker(){
+    pickerGrid.innerHTML = '';
+    STORE_PHOTOS
+      .filter(p => cameraFilter === 'all' || p.cam === cameraFilter)
+      .forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'grid-item' + (selectedPhoto && p.full === selectedPhoto.full ? ' selected' : '');
+        item.title = prettyLabel(p.label);
+        const img = document.createElement('img');
+        img.loading = 'lazy';
+        img.src = p.thumb;
+        img.alt = prettyLabel(p.label);
+        item.appendChild(img);
+        item.addEventListener('click', () => selectPhoto(p));
+        pickerGrid.appendChild(item);
+      });
+  }
+
+  function selectPhoto(photo){
+    selectedPhoto = photo;
+    state.verse = 'none'; // reset any pairing when switching photos
+    photoTitle.textContent = prettyLabel(photo.label);
+    photoMeta.textContent = (CAMERA_LABEL[photo.cam] || photo.cam) + ' · ' + photo.theme;
+    buildScriptureRow();
+    buildPicker();
+    refresh();
+  }
+
+  // Scripture pairing row is built from STORE_VERSES (photos in a "bible" folder).
+  // Labeled generically Verse 1..N since we can't auto-detect the actual verse pictured.
+  function buildScriptureRow(){
+    const row = document.getElementById('scriptureRow');
+    row.innerHTML = '';
+    const noneBtn = document.createElement('button');
+    noneBtn.className = 'option-btn' + (state.verse === 'none' ? ' active' : '');
+    noneBtn.textContent = 'None';
+    noneBtn.dataset.verse = 'none';
+    noneBtn.addEventListener('click', () => { state.verse = 'none'; refresh(); });
+    row.appendChild(noneBtn);
+
+    STORE_VERSES.forEach((v, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn' + (state.verse === i ? ' active' : '');
+      btn.textContent = v.label;
+      btn.dataset.verse = i;
+      btn.addEventListener('click', () => { state.verse = i; refresh(); });
+      row.appendChild(btn);
+    });
+  }
+
+  function buildSizeOptions(){
+    const row = document.getElementById('sizeRow');
+    row.innerHTML = '';
+    const sizes = Object.keys(PRICING[state.finish]);
+    if (!sizes.includes(state.size)) state.size = sizes[Math.floor(sizes.length/2)];
+    sizes.forEach(size => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn' + (size === state.size ? ' active' : '');
+      btn.textContent = size.replace('x', '×') + '"';
+      btn.dataset.size = size;
+      btn.addEventListener('click', () => { state.size = size; refresh(); });
+      row.appendChild(btn);
+    });
+  }
+
+  function applySize(){
+    // A 5'9" (69in) person is often TALLER than most print sizes — that's real and correct,
+    // so on the small card we scale both together off the taller of the two, keeping their
+    // relative sizes honest. In the lightbox, the silhouette is hidden, so we scale purely
+    // to fill the space and show detail.
+    const [wIn, hIn] = state.size.split('x').map(Number);
+    const PERSON_HEIGHT_IN = 69;
+    const MAX_STAGE_PX = isZoomed ? Math.min(window.innerHeight * 0.58, 760) : 460;
+    const tallestIn = isZoomed ? hIn : Math.max(PERSON_HEIGHT_IN, hIn);
+    const pxPerInch = MAX_STAGE_PX / tallestIn;
+
+    printEl.style.width = (wIn * pxPerInch) + 'px';
+    printEl.style.height = (hIn * pxPerInch) + 'px';
+
+    // real thickness per material — paper is nearly flat, metal has slight rigidity,
+    // a framed poster has genuine depth (mat + glass + the frame itself)
+    const wPx = wIn * pxPerInch;
+    const hPx = hIn * pxPerInch;
+    const depth = state.finish === 'framed' ? 24 : state.finish === 'metal' ? 8 : 4;
+    edgeRight.style.width = depth + 'px';
+    edgeRight.style.height = hPx + 'px';
+    edgeRight.style.transform = `translateX(${wPx}px) rotateY(90deg)`;
+    edgeBottom.style.width = wPx + 'px';
+    edgeBottom.style.height = depth + 'px';
+    edgeBottom.style.transform = `translateY(${hPx}px) rotateX(-90deg)`;
+
+    // frame width scales off the SAME real-world pxPerInch as the print itself —
+    // a "normal" ~1.1in frame stays visually normal whether the print renders
+    // tiny (8x12) or large (24x36), instead of a fixed px border overwhelming small sizes
+    const frameInches = 1.1;
+    const framePx = Math.max(3, frameInches * pxPerInch);
+    frameBorder.style.borderWidth = framePx + 'px';
+    matDiv.style.inset = framePx + 'px';
+
+    if (!isZoomed) {
+      // silhouette scales off the SAME pxPerInch, and BOTH width and height update
+      // (the original bug: only height was ever set, so the SVG stayed squashed to its
+      // native 34px width no matter how tall it got — fixed by scaling both dimensions
+      // together off the SVG's real 34:100 aspect ratio)
+      const silHeightPx = PERSON_HEIGHT_IN * pxPerInch;
+      const silWidthPx = silHeightPx * (34 / 100);
+      silSvg.setAttribute('width', silWidthPx);
+      silSvg.setAttribute('height', silHeightPx);
+      silSvg.style.width = silWidthPx + 'px';
+      silSvg.style.height = silHeightPx + 'px';
+    }
+  }
+
+  function refresh(){
+    if (!selectedPhoto) return;
+
+    // finish buttons
+    document.querySelectorAll('#finishRow .option-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.finish === state.finish));
+    // verse buttons
+    document.querySelectorAll('#scriptureRow .option-btn').forEach(b =>
+      b.classList.toggle('active', String(b.dataset.verse) === String(state.verse)));
+
+    buildSizeOptions();
+    document.querySelectorAll('#sizeRow .option-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.size === state.size));
+
+    // image (verse pairing swaps the shown photo)
+    const imgSrc = displayImg();
+    printImg.src = imgSrc;
+    matImg.src = imgSrc;
+
+    // size scaling — proportional to real inches, dynamically fit to whichever stage is active
+    applySize();
+
+    // finish-specific styling
+    printEl.classList.remove('poster', 'metal', 'framed');
+    printEl.classList.add(state.finish);
+    frameBorder.style.display = state.finish === 'framed' ? 'block' : 'none';
+    matDiv.style.display = state.finish === 'framed' ? 'flex' : 'none';
+    printImg.style.display = state.finish === 'framed' ? 'none' : 'block';
+
+    // price
+    const [wIn, hIn] = state.size.split('x').map(Number);
+    const price = PRICING[state.finish][state.size];
+    priceDisplay.textContent = '$' + price.toFixed(2);
+    sizeNote.textContent = wIn + '×' + hIn + ' in';
+
+    // mailto
+    const verseLabel = state.verse === 'none' ? 'None' : (STORE_VERSES[state.verse].label);
+    const photoName = prettyLabel(selectedPhoto.label);
+    const subject = encodeURIComponent('Print Inquiry: ' + photoName);
+    const body = encodeURIComponent(
+      `Photo: ${photoName} (${CAMERA_LABEL[selectedPhoto.cam] || selectedPhoto.cam} · ${selectedPhoto.theme})\n` +
+      `Image file: ${selectedPhoto.full}\n` +
+      `Finish: ${FINISH_LABEL[state.finish]}\n` +
+      `Size: ${state.size} in\n` +
+      `Scripture pairing: ${verseLabel}\n` +
+      `Price: $${price.toFixed(2)}`
+    );
+    requestBtn.href = `mailto:anaiaholiverphotography@gmail.com?subject=${subject}&body=${body}`;
+  }
+
+  document.querySelectorAll('#finishRow .option-btn').forEach(b => {
+    b.addEventListener('click', () => { state.finish = b.dataset.finish; refresh(); });
+  });
+
+  // ---- Rotation state, driven by drag (zoomed only) + explicit pan buttons ----
+  let rotY = -14; // resting angle so it doesn't sit dead-flat when idle
+  let rotX = 4;
+  let dragging = false;
+  let lastX = 0, lastY = 0;
+
+  const MAX_ROT = 45;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  function applyRotation(){
+    printEl.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+
+    const nx = rotY / MAX_ROT; // -1..1
+    const ny = rotX / MAX_ROT; // -1..1
+
+    sheen.style.backgroundPosition = `${50 - nx * 40}% ${50 + ny * 40}%`;
+
+    // highlight: a warm hotspot that slides opposite the tilt, as if a fixed light
+    // source is reflecting off the surface differently as it turns — stronger in the lightbox
+    const glow = isZoomed ? 0.55 : 0.28;
+    lightHighlight.style.background =
+      `radial-gradient(circle at ${50 - nx * 55}% ${50 - ny * 55}%, rgba(255,250,235,${glow}) 0%, rgba(255,250,235,0) 42%)`;
+
+    // shadow: darkens as the surface turns away, so extreme angles read as a real
+    // object turning rather than a flat image being skewed
+    const turn = Math.min(1, (Math.abs(nx) + Math.abs(ny)) / 1.4);
+    lightShadow.style.background =
+      `linear-gradient(${135 + nx * 30}deg, rgba(10,10,10,${0.28 * turn}) 0%, rgba(10,10,10,0) 55%)`;
+
+    // faint inner rim-light, grows with rotation — reads as an edge catching light
+    printEl.style.boxShadow =
+      `0 25px 45px rgba(28,27,25,0.18), 0 6px 12px rgba(28,27,25,0.1), inset 0 0 0 1px rgba(255,255,255,${0.18 * turn})`;
+  }
+
+  function startDrag(x, y){
+    if (!isZoomed) return; // small card no longer free-drags — click it to open the lightbox instead
+    dragging = true;
+    lastX = x; lastY = y;
+    printEl.style.transition = 'width 0.35s ease, height 0.35s ease';
+  }
+  function moveDrag(x, y){
+    if (!dragging) return;
+    const dx = x - lastX;
+    const dy = y - lastY;
+    lastX = x; lastY = y;
+    rotY = clamp(rotY + dx * 0.35, -MAX_ROT, MAX_ROT);
+    rotX = clamp(rotX - dy * 0.35, -MAX_ROT, MAX_ROT);
+    applyRotation();
+  }
+  function endDrag(){
+    dragging = false;
+    printEl.style.transition = 'width 0.35s ease, height 0.35s ease, transform 0.4s ease';
+  }
+
+  printWrap.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY));
+  window.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+  window.addEventListener('mouseup', endDrag);
+
+  printWrap.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    startDrag(t.clientX, t.clientY);
+  }, { passive: true });
+  window.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    moveDrag(t.clientX, t.clientY);
+  }, { passive: true });
+  window.addEventListener('touchend', endDrag);
+
+  // the visible handle drives the exact same rotation logic — it's just a clearer affordance
+  dragHandle.addEventListener('mousedown', (e) => { e.stopPropagation(); startDrag(e.clientX, e.clientY); });
+  dragHandle.addEventListener('touchstart', (e) => {
+    e.stopPropagation();
+    const t = e.touches[0];
+    startDrag(t.clientX, t.clientY);
+  }, { passive: true });
+
+  // ---- Explicit pan buttons — a precise, no-guesswork alternative to dragging ----
+  document.querySelectorAll('.pan-btn[data-dir]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const step = 12;
+      if (btn.dataset.dir === 'up')    rotX = clamp(rotX + step, -MAX_ROT, MAX_ROT);
+      if (btn.dataset.dir === 'down')  rotX = clamp(rotX - step, -MAX_ROT, MAX_ROT);
+      if (btn.dataset.dir === 'left')  rotY = clamp(rotY - step, -MAX_ROT, MAX_ROT);
+      if (btn.dataset.dir === 'right') rotY = clamp(rotY + step, -MAX_ROT, MAX_ROT);
+      applyRotation();
+    });
+  });
+  panReset.addEventListener('click', () => { rotX = 4; rotY = -14; applyRotation(); });
+
+  // ---- Lightbox open/close — moves the same print element between the small
+  // stage and the full lightbox, so there's one source of truth for its state ----
+  function openZoom(){
+    if (!selectedPhoto) return;
+    isZoomed = true;
+    printWrap.classList.add('zoomed');
+    lightboxStage.appendChild(printWrap);
+    lightbox.classList.add('open');
+    document.body.classList.add('zoom-active');
+    document.body.style.overflow = 'hidden';
+    applySize();
+  }
+  function closeZoom(){
+    isZoomed = false;
+    printWrap.classList.remove('zoomed');
+    stageEl.appendChild(printWrap);
+    lightbox.classList.remove('open');
+    document.body.classList.remove('zoom-active');
+    document.body.style.overflow = '';
+    applySize();
+  }
+
+  zoomBtn.addEventListener('click', (e) => { e.stopPropagation(); openZoom(); });
+  printWrap.addEventListener('click', () => { if (!isZoomed) openZoom(); });
+  lightboxClose.addEventListener('click', closeZoom);
+  lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeZoom(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isZoomed) closeZoom(); });
+
+  // ---- Boot ----
+  // Deep-linking: store.html?photo=<full path> auto-selects a matching photo on load.
+  function initialPhoto(){
+    const param = new URLSearchParams(location.search).get('photo');
+    if (param) {
+      const match = STORE_PHOTOS.find(p => p.full === param || p.full === decodeURIComponent(param));
+      if (match) return match;
+    }
+    return STORE_PHOTOS[0] || null;
+  }
+
+  buildCameraFilters();
+  applyRotation();
+  const first = initialPhoto();
+  if (first) {
+    selectPhoto(first);
+  } else {
+    buildPicker();
+  }
+</script>
+
+</body>
+</html>
