@@ -21,6 +21,13 @@
     min-height:100vh; -webkit-font-smoothing:antialiased;
   }
   header{ padding:4rem 7vw 2rem; border-bottom:1px solid var(--line); }
+  .site-nav{ margin-bottom:1.4rem; }
+  .site-nav a{
+    font-family:'Inter',sans-serif; font-size:0.75rem; font-weight:500;
+    letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft);
+    text-decoration:none; transition:color 0.15s ease;
+  }
+  .site-nav a:hover{ color:var(--ink); }
   h1{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(2rem,4vw,2.8rem); letter-spacing:-0.01em; }
   .sub{ font-size:0.9rem; color:var(--ink-soft); margin-top:0.6rem; }
 
@@ -93,6 +100,17 @@
     flex-shrink:0;
     position:relative;
   }
+
+  /* Drag interactions were tinting the print blue — that's the browser's text/image
+     selection highlight firing mid-drag. Suppress selection + native image drag on
+     everything in the interactive stage/lightbox/picker. */
+  .stage, .print-wrap, .lightbox, .grid-item{
+    user-select:none; -webkit-user-select:none; -moz-user-select:none;
+  }
+  .print img, .grid-item img, .silhouette svg{
+    -webkit-user-drag:none; user-drag:none; pointer-events:none;
+  }
+  .grid-item img{ pointer-events:auto; } /* re-enable: the grid tile itself handles the click */
 
   .print{
     position:relative;
@@ -171,7 +189,7 @@
   }
   .print.framed .mat{
     position:absolute; inset:14px;
-    background: transparent; /* margins left transparent intentionally for this test pass */
+    background:#141414; /* moderate black mat, ~0.5in — padding set in JS off pxPerInch */
     display:flex; align-items:center; justify-content:center;
   }
   .print.framed .mat img{ width:100%; height:100%; object-fit:cover; }
@@ -289,6 +307,7 @@
 <body>
 
 <header>
+  <nav class="site-nav"><a href="index.html">← Gallery</a></nav>
   <h1>Prints</h1>
   <div class="sub">Choose a photo, then a finish, size, and optional scripture pairing.</div>
 </header>
@@ -590,10 +609,16 @@
     // frame width scales off the SAME real-world pxPerInch as the print itself —
     // a "normal" ~1.1in frame stays visually normal whether the print renders
     // tiny (8x12) or large (24x36), instead of a fixed px border overwhelming small sizes
-    const frameInches = 1.1;
+    const frameInches = 0.9;
     const framePx = Math.max(3, frameInches * pxPerInch);
     frameBorder.style.borderWidth = framePx + 'px';
     matDiv.style.inset = framePx + 'px';
+
+    // moderate black mat: ~0.5in of matting between the frame and the photo,
+    // scaled off the same real-world pxPerInch so it stays proportional at any size
+    const matInches = 0.5;
+    const matPx = Math.max(2, matInches * pxPerInch);
+    matDiv.style.padding = matPx + 'px';
 
     if (!isZoomed) {
       // silhouette scales off the SAME pxPerInch, and BOTH width and height update

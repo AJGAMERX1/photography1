@@ -13,7 +13,15 @@
   header{ padding:6rem 7vw 2.5rem; position:relative; overflow:hidden; }
   .geo-accent{ position:absolute; pointer-events:none; z-index:0; }
   .geo-accent.top-right{ top:-2rem; right:3vw; width:260px; height:260px; }
-  header h1, header .sub{ position:relative; z-index:1; }
+  header h1, header .sub, header .site-nav{ position:relative; z-index:1; }
+  .site-nav{ display:flex; justify-content:flex-end; margin-bottom:1.6rem; }
+  .site-nav a{
+    font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:500;
+    letter-spacing:0.08em; text-transform:uppercase; color:var(--ink);
+    text-decoration:none; border-bottom:1px solid var(--ink);
+    padding-bottom:0.25rem; transition:opacity 0.15s ease;
+  }
+  .site-nav a:hover{ opacity:0.55; }
   h1{ font-family:'Fraunces',serif; font-weight:400; font-size:clamp(2.4rem,5vw,3.6rem); letter-spacing:-0.01em; line-height:1.05; }
   .sub{ font-size:0.92rem; color:var(--ink-soft); margin-top:0.9rem; letter-spacing:0.01em; }
   .filter-bar{ display:flex; align-items:center; justify-content:space-between; gap:1.5rem; padding:0 7vw 2.2rem; border-bottom:1px solid var(--line); margin-bottom:3.5rem; flex-wrap:wrap; }
@@ -69,6 +77,7 @@
     <polygon points="250,10 250,90 170,10" fill="#1c1b19" opacity="0.05"/>
     <circle cx="222" cy="38" r="3" fill="#1c1b19" opacity="0.35"/>
   </svg>
+  <nav class="site-nav"><a href="store.html">Print Shop →</a></nav>
   <h1>Photography by Anaiah Oliver</h1>
   <div class="sub">contact me at anaiaholiverphotography@gmail.com for printing info and pricing</div>
 </header>
