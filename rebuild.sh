@@ -17,6 +17,20 @@ find images/fulls -type f -iname "*.jpg" | while read -r f; do
   magick "$f" -resize 512x512\> -quality 85 "$dest"
 done
 
+echo "Resizing images/Prints into images/print-thumbs..."
+rm -rf images/print-thumbs
+if [ -d images/Prints ]; then
+  find images/Prints -type f -iname "_*.jpg" | while read -r f; do
+    mv "$f" "$(dirname "$f")/$(basename "$f" | sed 's/^_*//')"
+  done
+  find images/Prints -type f -iname "*.jpg" | while read -r f; do
+    rel="${f#images/Prints/}"
+    dest="images/print-thumbs/$rel"
+    mkdir -p "$(dirname "$dest")"
+    magick "$f" -resize 512x512\> -quality 85 "$dest"
+  done
+fi
+
 echo "Rebuilding gallery from folder structure..."
 python3 << 'PYEOF'
 import os, re
@@ -76,57 +90,109 @@ if os.path.exists('verses.json'):
             if not k.startswith('_') and v.strip()
         }
 
-# store-picks.json decides which photos are sellable and what they're called.
-# An empty/missing picks list means "offer everything", so the store still works
-# before it has been curated.
-PICKS = {}
-PICK_ORDER = []
-if os.path.exists('store-picks.json'):
-    with open('store-picks.json') as fh:
-        for p in json.load(fh).get('picks', []):
-            f = p.get('file', '').strip()
-            if not f:
-                continue
-            PICKS[f] = (p.get('title') or '').strip()
-            PICK_ORDER.append(f)
-CURATED = bool(PICKS)
+# ---------------------------------------------------------------------------
+# WHAT IS SOLD  ->  images/Prints/
+#
+# Drop your best work in there and it is offered as a print. Nothing else is.
+# The FILENAME IS THE TITLE, so "Cold Moon.jpg" is sold as "Cold Moon" -- no
+# list to maintain anywhere. Two layouts both work:
+#
+#     images/Prints/Cold Moon.jpg              <- flat
+#     images/Prints/7d/Cold Moon.jpg           <- camera subfolder
+#
+# Laid out flat, the camera and theme are recovered by matching the filename
+# back to images/fulls, so a straight copy keeps its metadata. If the file was
+# renamed and can't be matched, it is still sold, just without a camera tag.
+#
+# An empty Prints folder means "offer everything", so the store keeps working
+# before it is curated.
+# ---------------------------------------------------------------------------
+PRINTS_DIR = 'images/Prints'
+
+# index images/fulls by basename so a copied-and-renamed file can be traced back
+fulls_index = {}
+for cam in sorted(os.listdir('images/fulls')):
+    cp = os.path.join('images/fulls', cam)
+    if not os.path.isdir(cp): continue
+    for theme in sorted(os.listdir(cp)):
+        tp = os.path.join(cp, theme)
+        if not os.path.isdir(tp): continue
+        for fn in os.listdir(tp):
+            if fn.lower().endswith('.jpg'):
+                fulls_index.setdefault(fn.lower(), (cam, theme))
+
+def prints_entries():
+    out = []
+    if not os.path.isdir(PRINTS_DIR):
+        return out
+    for root, _dirs, files in os.walk(PRINTS_DIR):
+        for fn in sorted(files):
+            if not fn.lower().endswith('.jpg'): continue
+            abs_p = os.path.join(root, fn)
+            rel   = os.path.relpath(abs_p, PRINTS_DIR)        # e.g. "7d/Cold Moon.jpg"
+            parts = rel.split(os.sep)
+            cam   = parts[0] if len(parts) > 1 else ''
+            theme = ''
+            if not cam:                                        # flat: trace it back
+                cam, theme = fulls_index.get(fn.lower(), ('', ''))
+            else:
+                _c, theme = fulls_index.get(fn.lower(), (cam, ''))
+            out.append({
+                "src":   abs_p,
+                "rel":   rel,
+                "title": os.path.splitext(fn)[0],              # filename IS the title
+                "cam":   cam,
+                "theme": theme or 'prints',
+            })
+    return out
+
+PRINTS = prints_entries()
+CURATED = bool(PRINTS)
 
 photos = []
 verses = []
 verse_count = 0
 
-for cam in sorted(os.listdir('images/fulls')):
-    cam_path = os.path.join('images/fulls', cam)
-    if not os.path.isdir(cam_path): continue
-    for theme in sorted(os.listdir(cam_path)):
-        theme_path = os.path.join(cam_path, theme)
-        if not os.path.isdir(theme_path): continue
-        for fname in sorted(os.listdir(theme_path)):
-            if not fname.lower().endswith('.jpg'): continue
-            rel = f"{cam}/{theme}/{fname}"
-            if CURATED and rel not in PICKS:
-                continue                      # not a sellable pick
-            full = f"images/fulls/{rel}"
-            thumb = f"images/thumbs/{rel}"
-            label = PICKS.get(rel) or os.path.splitext(fname)[0]
-            photos.append({
-                "thumb": thumb, "full": full, "label": label,
-                "cam": cam, "theme": theme
-            })
-            if theme.lower() == "bible":
-                verse_count += 1
-                verses.append({
-                    "full": full,
-                    "label": VERSE_LABELS.get(fname, f"Verse {verse_count}")
-                })
-
 if CURATED:
-    order = {f: i for i, f in enumerate(PICK_ORDER)}
-    photos.sort(key=lambda p: order.get(p['full'][len('images/fulls/'):], 999))
-    missing = [f for f in PICK_ORDER
-               if not os.path.exists(os.path.join('images/fulls', f))]
-    for m in missing:
-        print(f"  !! store-picks.json lists a file that doesn't exist: {m}")
+    # Sold work comes from images/Prints. Thumbs are generated next to it so the
+    # store never has to reach back into the gallery's own thumbs.
+    for e in PRINTS:
+        photos.append({
+            "thumb": 'images/print-thumbs/' + e['rel'].replace(os.sep, '/'),
+            "full":  e['src'].replace(os.sep, '/'),
+            "label": e['title'],
+            "cam":   e['cam'],
+            "theme": e['theme'],
+        })
+        if e['theme'].lower() == 'bible':
+            verse_count += 1
+            verses.append({
+                "full": e['src'].replace(os.sep, '/'),
+                "label": VERSE_LABELS.get(os.path.basename(e['src']), f"Verse {verse_count}")
+            })
+    untagged = [p['label'] for p in photos if not p['cam']]
+    if untagged:
+        print(f"  note: {len(untagged)} print(s) have no camera tag "
+              f"(renamed, so not traceable to images/fulls) -- they still sell fine.")
+else:
+    # Nothing curated yet: offer the whole gallery so the store still works.
+    for cam in sorted(os.listdir('images/fulls')):
+        cam_path = os.path.join('images/fulls', cam)
+        if not os.path.isdir(cam_path): continue
+        for theme in sorted(os.listdir(cam_path)):
+            theme_path = os.path.join(cam_path, theme)
+            if not os.path.isdir(theme_path): continue
+            for fname in sorted(os.listdir(theme_path)):
+                if not fname.lower().endswith('.jpg'): continue
+                rel = f"{cam}/{theme}/{fname}"
+                photos.append({
+                    "thumb": f"images/thumbs/{rel}", "full": f"images/fulls/{rel}",
+                    "label": os.path.splitext(fname)[0], "cam": cam, "theme": theme
+                })
+                if theme.lower() == "bible":
+                    verse_count += 1
+                    verses.append({"full": f"images/fulls/{rel}",
+                                   "label": VERSE_LABELS.get(fname, f"Verse {verse_count}")})
 
 with open('store-data.js', 'w') as fh:
     fh.write("// Auto-generated by rebuild.sh — do not hand-edit, re-run the script instead.\n")
@@ -135,7 +201,7 @@ with open('store-data.js', 'w') as fh:
     fh.write("const STORE_VERSES = " + json.dumps(verses, indent=2) + ";\n")
 
 named = sum(1 for v in verses if not v['label'].startswith('Verse '))
-mode = f"curated from store-picks.json" if CURATED else "ALL photos (store-picks.json empty)"
+mode = "curated from images/Prints" if CURATED else "ALL gallery photos (images/Prints is empty)"
 print(f"store-data.js: {len(photos)} photos offered for print -- {mode}.")
 if named < len(verses):
     print("  -> add the missing verse references in verses.json, then re-run.")

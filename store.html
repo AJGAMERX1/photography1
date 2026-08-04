@@ -297,12 +297,18 @@
        verse scales with the print at every size and in the lightbox. --- */
   .verse-overlay{
     position:absolute; inset:0; z-index:3;
-    display:flex; flex-direction:column;
-    padding:6%;
     pointer-events:none;
-    text-align:center;
     line-height:1.4;
     overflow:hidden;
+  }
+  /* Placed with `top` as a % of the overlay's HEIGHT. The previous version used
+     padding-top, which resolves against WIDTH — so the verse sat in a different
+     spot for every material and could clip out of view entirely on the narrower
+     framed sizes. */
+  .verse-inner{
+    position:absolute; left:6%; right:6%;
+    transform:translateY(-50%);
+    text-align:center;
   }
   .verse-overlay.empty{ display:none; }
   .verse-body{ white-space:pre-wrap; }
@@ -310,13 +316,9 @@
   .verse-ref.hidden{ display:none; }
 
   /* horizontal placement */
-  .verse-overlay[data-h="left"]{ align-items:flex-start; text-align:left; }
-  .verse-overlay[data-h="center"]{ align-items:center; text-align:center; }
-  .verse-overlay[data-h="right"]{ align-items:flex-end; text-align:right; }
-  /* vertical placement */
-  .verse-overlay[data-v="top"]{ justify-content:flex-start; }
-  .verse-overlay[data-v="middle"]{ justify-content:center; }
-  .verse-overlay[data-v="bottom"]{ justify-content:flex-end; }
+  .verse-overlay[data-h="left"]   .verse-inner{ text-align:left; }
+  .verse-overlay[data-h="center"] .verse-inner{ text-align:center; }
+  .verse-overlay[data-h="right"]  .verse-inner{ text-align:right; }
 
   /* --- Verse designer controls --- */
   .verse-panel{ border-top:1px solid var(--line); margin-top:0.4rem; padding-top:1.4rem; }
@@ -381,6 +383,7 @@
        since the print's own pixel dimensions change with every size pick. --- */
   .edge-right, .edge-bottom{
     position:absolute; pointer-events:none;
+    backface-visibility:hidden; -webkit-backface-visibility:hidden;
   }
   .edge-right{ top:0; left:0; transform-origin:left center; }
   .edge-bottom{ top:0; left:0; transform-origin:top center; }
@@ -538,8 +541,10 @@
         <div class="frame-border" style="display:none;"></div>
         <div class="frame-inner" style="display:none;"><img src="" alt=""></div>
         <div class="verse-overlay empty" id="verseOverlay" data-h="center" data-v="bottom">
-          <div class="verse-body" id="verseBody"></div>
-          <div class="verse-ref hidden" id="verseRefLine"></div>
+          <div class="verse-inner" id="verseInner">
+            <div class="verse-body" id="verseBody"></div>
+            <div class="verse-ref hidden" id="verseRefLine"></div>
+          </div>
         </div>
         <div class="edge-right" id="edgeRight"></div>
         <div class="edge-bottom" id="edgeBottom"></div>
@@ -714,7 +719,7 @@
   <div class="lightbox-hint">Drag the print, or use the arrows — the lighting shifts as you turn it.</div>
 </div>
 
-<script src="store-data.js?v=1785854303"></script>
+<script src="store-data.js?v=1785856799"></script>
 <script>
   // ---- Pricing data, from CanvasDiscount cost sheet ----
   // Poster/Metal come straight from the cost sheet. Framed = poster + a size-scaled
@@ -1063,7 +1068,9 @@
 
   function buildCameraFilters(){
     const cams = [];
-    STORE_PHOTOS.forEach(p => { if (!cams.includes(p.cam)) cams.push(p.cam); });
+    // a print renamed on its way into images/Prints has no camera tag; don't
+    // render an empty filter button for it
+    STORE_PHOTOS.forEach(p => { if (p.cam && !cams.includes(p.cam)) cams.push(p.cam); });
     const makeBtn = (val, text) => {
       const b = document.createElement('button');
       b.className = 'option-btn' + (val === cameraFilter ? ' active' : '');
@@ -1073,6 +1080,7 @@
       return b;
     };
     cameraFilters.innerHTML = '';
+    if (!cams.length) { cameraFilters.innerHTML = ''; return; }   // nothing to filter by
     cameraFilters.appendChild(makeBtn('all', 'All'));
     cams.forEach(c => cameraFilters.appendChild(makeBtn(c, CAMERA_LABEL[c] || c)));
   }
@@ -1098,7 +1106,8 @@
   function selectPhoto(photo){
     selectedPhoto = photo;
     photoTitle.textContent = prettyLabel(photo.label);
-    photoMeta.textContent = (CAMERA_LABEL[photo.cam] || photo.cam) + ' · ' + photo.theme;
+    const camName = CAMERA_LABEL[photo.cam] || photo.cam;
+    photoMeta.textContent = camName ? camName + ' · ' + photo.theme : photo.theme;
     buildPicker();
     refresh();
   }
@@ -1169,12 +1178,8 @@
     verseOverlay.style.opacity = verse.opacity;
     verseOverlay.dataset.h = verse.h;
     verseOverlay.dataset.v = verse.v;
-    // absolute placement wins when it's been moved off a preset
-    verseOverlay.style.justifyContent = 'flex-start';
-    verseOverlay.style.alignItems =
-      verse.h === 'left' ? 'flex-start' : verse.h === 'right' ? 'flex-end' : 'center';
-    verseOverlay.style.paddingTop = (verse.y * 100).toFixed(2) + '%';
-    verseOverlay.style.transform = 'translateY(-50%)';
+    // `top` on an absolutely positioned child IS a % of the parent's height
+    document.getElementById('verseInner').style.top = (verse.y * 100).toFixed(2) + '%';
     // shadow scales with the type so it stays proportional at any print size
     verseOverlay.style.textShadow = verse.shadow
       ? '0 0.03em 0.14em rgba(0,0,0,0.55), 0 0 0.5em rgba(0,0,0,0.35)'
@@ -1396,12 +1401,8 @@
       metal:0.05, acrylic:0.25, canvas:1.5
     };
     const depth = Math.max(0, (DEPTH_IN[state.finish] ?? 0.05) * pxPerInch);
-    edgeRight.style.width = depth + 'px';
-    edgeRight.style.height = hPx + 'px';
-    edgeRight.style.transform = `translateX(${wPx}px) rotateY(90deg)`;
-    edgeBottom.style.width = wPx + 'px';
-    edgeBottom.style.height = depth + 'px';
-    edgeBottom.style.transform = `translateY(${hPx}px) rotateX(-90deg)`;
+    edgeGeom.w = wPx; edgeGeom.h = hPx; edgeGeom.d = depth;
+    placeEdges();
 
     // FRAME MOULDING. There is no mat on these products — the moulding sits
     // straight on the print — so the old inner "mat" band is gone and only the
@@ -1507,6 +1508,27 @@
   const MAX_ROT = 45;
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
+  // Which side faces you depends on the rotation. Only a RIGHT face existed, so
+  // turning the other way left the bottom face's far corner poking out past the
+  // print with nothing to cap it — the stray wedge under the print. Put the
+  // vertical face on whichever side is actually visible and the corner closes.
+  const edgeGeom = { w:0, h:0, d:0 };
+  function placeEdges(){
+    const { w, h, d } = edgeGeom;
+    if (!w || !h) return;
+    const showLeft = rotY > 0;          // turned right-edge-away => left face shows
+    edgeRight.style.width  = d + 'px';
+    edgeRight.style.height = h + 'px';
+    edgeRight.style.transform = `translateX(${showLeft ? 0 : w}px) rotateY(90deg)`;
+
+    const showTop = rotX < 0;           // tilted so the underside hides
+    edgeBottom.style.width  = w + 'px';
+    edgeBottom.style.height = d + 'px';
+    edgeBottom.style.transform = showTop
+      ? `translateY(0px) rotateX(-90deg)`
+      : `translateY(${h}px) rotateX(-90deg)`;
+  }
+
   function applyRotation(){
     // A print hanging on a real wall is flat to it — the tilt render belongs to
     // the studio view. In room view we zero the rotation and let the contact
@@ -1517,10 +1539,12 @@
       lightHighlight.style.background = 'none';
       lightShadow.style.background = 'none';
       printEl.style.boxShadow = '';   // .stage.room-mode .print supplies the shadow
+      placeEdges();
       return;
     }
 
     printEl.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+    placeEdges();
 
     const nx = rotY / MAX_ROT; // -1..1
     const ny = rotX / MAX_ROT; // -1..1
