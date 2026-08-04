@@ -6,382 +6,88 @@ const CAMERA_LABEL = {
 };
 const STORE_PHOTOS = [
   {
-    "thumb": "images/thumbs/7d/flowers/MG_7851.jpg",
-    "full": "images/fulls/7d/flowers/MG_7851.jpg",
-    "label": "MG_7851",
+    "thumb": "images/print-thumbs/Beetle on a Sunflower.jpg",
+    "full": "images/Prints/Beetle on a Sunflower.jpg",
+    "label": "Beetle on a Sunflower",
     "cam": "7d",
     "theme": "flowers"
   },
   {
-    "thumb": "images/thumbs/7d/flowers/MG_7917.jpg",
-    "full": "images/fulls/7d/flowers/MG_7917.jpg",
-    "label": "MG_7917",
+    "thumb": "images/print-thumbs/Crepe Myrtle in Shade.jpg",
+    "full": "images/Prints/Crepe Myrtle in Shade.jpg",
+    "label": "Crepe Myrtle in Shade",
     "cam": "7d",
     "theme": "flowers"
   },
   {
-    "thumb": "images/thumbs/7d/flowers/MG_7920.jpg",
-    "full": "images/fulls/7d/flowers/MG_7920.jpg",
-    "label": "MG_7920",
-    "cam": "7d",
-    "theme": "flowers"
-  },
-  {
-    "thumb": "images/thumbs/7d/flowers/MG_7966-2.jpg",
-    "full": "images/fulls/7d/flowers/MG_7966-2.jpg",
-    "label": "MG_7966-2",
-    "cam": "7d",
-    "theme": "flowers"
-  },
-  {
-    "thumb": "images/thumbs/7d/flowers/MG_7971.jpg",
-    "full": "images/fulls/7d/flowers/MG_7971.jpg",
-    "label": "MG_7971",
-    "cam": "7d",
-    "theme": "flowers"
-  },
-  {
-    "thumb": "images/thumbs/7d/flowers/MG_7972-2.jpg",
-    "full": "images/fulls/7d/flowers/MG_7972-2.jpg",
-    "label": "MG_7972-2",
-    "cam": "7d",
-    "theme": "flowers"
-  },
-  {
-    "thumb": "images/thumbs/7d/flowers/MG_8034.jpg",
-    "full": "images/fulls/7d/flowers/MG_8034.jpg",
-    "label": "MG_8034",
-    "cam": "7d",
-    "theme": "flowers"
-  },
-  {
-    "thumb": "images/thumbs/7d/flowers/MG_8060-spektrafilm-001-2.jpg",
-    "full": "images/fulls/7d/flowers/MG_8060-spektrafilm-001-2.jpg",
-    "label": "MG_8060-spektrafilm-001-2",
-    "cam": "7d",
-    "theme": "flowers"
-  },
-  {
-    "thumb": "images/thumbs/7d/flowers/MG_8062-2.jpg",
-    "full": "images/fulls/7d/flowers/MG_8062-2.jpg",
-    "label": "MG_8062-2",
-    "cam": "7d",
-    "theme": "flowers"
-  },
-  {
-    "thumb": "images/thumbs/7d/flowers/MG_8399.jpg",
-    "full": "images/fulls/7d/flowers/MG_8399.jpg",
-    "label": "MG_8399",
-    "cam": "7d",
-    "theme": "flowers"
-  },
-  {
-    "thumb": "images/thumbs/7d/misc/MG_7952.jpg",
-    "full": "images/fulls/7d/misc/MG_7952.jpg",
-    "label": "MG_7952",
-    "cam": "7d",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/7d/misc/MG_7992-2.jpg",
-    "full": "images/fulls/7d/misc/MG_7992-2.jpg",
-    "label": "MG_7992-2",
-    "cam": "7d",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/7d/misc/MG_8007.jpg",
-    "full": "images/fulls/7d/misc/MG_8007.jpg",
-    "label": "MG_8007",
-    "cam": "7d",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/7d/misc/MG_8050.jpg",
-    "full": "images/fulls/7d/misc/MG_8050.jpg",
-    "label": "MG_8050",
-    "cam": "7d",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/7d/misc/MG_8176.jpg",
-    "full": "images/fulls/7d/misc/MG_8176.jpg",
-    "label": "MG_8176",
-    "cam": "7d",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/7d/misc/MG_8188.jpg",
-    "full": "images/fulls/7d/misc/MG_8188.jpg",
-    "label": "MG_8188",
-    "cam": "7d",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/7d/misc/MG_8193.jpg",
-    "full": "images/fulls/7d/misc/MG_8193.jpg",
-    "label": "MG_8193",
-    "cam": "7d",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/7d/skies/MG_7871.jpg",
-    "full": "images/fulls/7d/skies/MG_7871.jpg",
-    "label": "MG_7871",
+    "thumb": "images/print-thumbs/Crescent Moon in Daylight.jpg",
+    "full": "images/Prints/Crescent Moon in Daylight.jpg",
+    "label": "Crescent Moon in Daylight",
     "cam": "7d",
     "theme": "skies"
   },
   {
-    "thumb": "images/thumbs/7d/skies/MG_7890.jpg",
-    "full": "images/fulls/7d/skies/MG_7890.jpg",
-    "label": "MG_7890",
+    "thumb": "images/print-thumbs/Lantern at Night.jpg",
+    "full": "images/Prints/Lantern at Night.jpg",
+    "label": "Lantern at Night",
+    "cam": "7d",
+    "theme": "misc"
+  },
+  {
+    "thumb": "images/print-thumbs/Lit Cloud at Dusk.jpg",
+    "full": "images/Prints/Lit Cloud at Dusk.jpg",
+    "label": "Lit Cloud at Dusk",
     "cam": "7d",
     "theme": "skies"
   },
   {
-    "thumb": "images/thumbs/7d/skies/MG_8043.jpg",
-    "full": "images/fulls/7d/skies/MG_8043.jpg",
-    "label": "MG_8043",
-    "cam": "7d",
-    "theme": "skies"
-  },
-  {
-    "thumb": "images/thumbs/7d/skies/MG_8081.jpg",
-    "full": "images/fulls/7d/skies/MG_8081.jpg",
-    "label": "MG_8081",
-    "cam": "7d",
-    "theme": "skies"
-  },
-  {
-    "thumb": "images/thumbs/7d/skies/MG_8084.jpg",
-    "full": "images/fulls/7d/skies/MG_8084.jpg",
-    "label": "MG_8084",
-    "cam": "7d",
-    "theme": "skies"
-  },
-  {
-    "thumb": "images/thumbs/7d/skies/MG_8103-2.jpg",
-    "full": "images/fulls/7d/skies/MG_8103-2.jpg",
-    "label": "MG_8103-2",
-    "cam": "7d",
-    "theme": "skies"
-  },
-  {
-    "thumb": "images/thumbs/7d/skies/MG_8114.jpg",
-    "full": "images/fulls/7d/skies/MG_8114.jpg",
-    "label": "MG_8114",
-    "cam": "7d",
-    "theme": "skies"
-  },
-  {
-    "thumb": "images/thumbs/7d/skies/MG_8127.jpg",
-    "full": "images/fulls/7d/skies/MG_8127.jpg",
-    "label": "MG_8127",
-    "cam": "7d",
-    "theme": "skies"
-  },
-  {
-    "thumb": "images/thumbs/7d/skies/moon-spektrafilm-001.jpg",
-    "full": "images/fulls/7d/skies/moon-spektrafilm-001.jpg",
-    "label": "moon-spektrafilm-001",
-    "cam": "7d",
-    "theme": "skies"
-  },
-  {
-    "thumb": "images/thumbs/g7x/flowers/IMG_2553.jpg",
-    "full": "images/fulls/g7x/flowers/IMG_2553.jpg",
-    "label": "IMG_2553",
-    "cam": "g7x",
-    "theme": "flowers"
-  },
-  {
-    "thumb": "images/thumbs/g7x/misc/IMG_2520-2.jpg",
-    "full": "images/fulls/g7x/misc/IMG_2520-2.jpg",
-    "label": "IMG_2520-2",
-    "cam": "g7x",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/g7x/misc/IMG_2630.jpg",
-    "full": "images/fulls/g7x/misc/IMG_2630.jpg",
-    "label": "IMG_2630",
-    "cam": "g7x",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/g7x/misc/IMG_2703.jpg",
-    "full": "images/fulls/g7x/misc/IMG_2703.jpg",
-    "label": "IMG_2703",
-    "cam": "g7x",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/g7x/misc/IMG_2720.jpg",
-    "full": "images/fulls/g7x/misc/IMG_2720.jpg",
-    "label": "IMG_2720",
-    "cam": "g7x",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/g7x/misc/IMG_2725.jpg",
-    "full": "images/fulls/g7x/misc/IMG_2725.jpg",
-    "label": "IMG_2725",
-    "cam": "g7x",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/g7x/misc/IMG_2731.jpg",
-    "full": "images/fulls/g7x/misc/IMG_2731.jpg",
-    "label": "IMG_2731",
-    "cam": "g7x",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/g7x/misc/IMG_2736.jpg",
-    "full": "images/fulls/g7x/misc/IMG_2736.jpg",
-    "label": "IMG_2736",
-    "cam": "g7x",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/g7x/misc/IMG_2740.jpg",
-    "full": "images/fulls/g7x/misc/IMG_2740.jpg",
-    "label": "IMG_2740",
-    "cam": "g7x",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/g7x/misc/IMG_2752.jpg",
-    "full": "images/fulls/g7x/misc/IMG_2752.jpg",
-    "label": "IMG_2752",
-    "cam": "g7x",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/g7x/skies/IMG_2579-3.jpg",
-    "full": "images/fulls/g7x/skies/IMG_2579-3.jpg",
-    "label": "IMG_2579-3",
+    "thumb": "images/print-thumbs/Storm Cloud at Sunset.jpg",
+    "full": "images/Prints/Storm Cloud at Sunset.jpg",
+    "label": "Storm Cloud at Sunset",
     "cam": "g7x",
     "theme": "skies"
   },
   {
-    "thumb": "images/thumbs/g7x/skies/IMG_2590-spektrafilm-001.jpg",
-    "full": "images/fulls/g7x/skies/IMG_2590-spektrafilm-001.jpg",
-    "label": "IMG_2590-spektrafilm-001",
-    "cam": "g7x",
-    "theme": "skies"
-  },
-  {
-    "thumb": "images/thumbs/r6ii/bible/799A3891 10.56.11\u202fAM.jpg",
-    "full": "images/fulls/r6ii/bible/799A3891 10.56.11\u202fAM.jpg",
-    "label": "799A3891 10.56.11\u202fAM",
-    "cam": "r6ii",
-    "theme": "bible"
-  },
-  {
-    "thumb": "images/thumbs/r6ii/bible/799A4061.jpg",
-    "full": "images/fulls/r6ii/bible/799A4061.jpg",
-    "label": "799A4061",
-    "cam": "r6ii",
-    "theme": "bible"
-  },
-  {
-    "thumb": "images/thumbs/r6ii/bible/799A4062.jpg",
-    "full": "images/fulls/r6ii/bible/799A4062.jpg",
-    "label": "799A4062",
-    "cam": "r6ii",
-    "theme": "bible"
-  },
-  {
-    "thumb": "images/thumbs/r6ii/bible/799A4064.jpg",
-    "full": "images/fulls/r6ii/bible/799A4064.jpg",
-    "label": "799A4064",
-    "cam": "r6ii",
-    "theme": "bible"
-  },
-  {
-    "thumb": "images/thumbs/r6ii/bible/799A4068-2.jpg",
-    "full": "images/fulls/r6ii/bible/799A4068-2.jpg",
-    "label": "799A4068-2",
-    "cam": "r6ii",
-    "theme": "bible"
-  },
-  {
-    "thumb": "images/thumbs/r6ii/flowers/799A4020.jpg",
-    "full": "images/fulls/r6ii/flowers/799A4020.jpg",
-    "label": "799A4020",
+    "thumb": "images/print-thumbs/Sunburst Through Branches.jpg",
+    "full": "images/Prints/Sunburst Through Branches.jpg",
+    "label": "Sunburst Through Branches",
     "cam": "r6ii",
     "theme": "flowers"
   },
   {
-    "thumb": "images/thumbs/r6ii/flowers/799A4022-3.jpg",
-    "full": "images/fulls/r6ii/flowers/799A4022-3.jpg",
-    "label": "799A4022-3",
-    "cam": "r6ii",
+    "thumb": "images/print-thumbs/Sunflower Against the Dark.jpg",
+    "full": "images/Prints/Sunflower Against the Dark.jpg",
+    "label": "Sunflower Against the Dark",
+    "cam": "7d",
     "theme": "flowers"
   },
   {
-    "thumb": "images/thumbs/r6ii/flowers/799A4022.jpg",
-    "full": "images/fulls/r6ii/flowers/799A4022.jpg",
-    "label": "799A4022",
-    "cam": "r6ii",
+    "thumb": "images/print-thumbs/Sunflower Among Leaves.jpg",
+    "full": "images/Prints/Sunflower Among Leaves.jpg",
+    "label": "Sunflower Among Leaves",
+    "cam": "7d",
     "theme": "flowers"
   },
   {
-    "thumb": "images/thumbs/r6ii/flowers/799A4046.jpg",
-    "full": "images/fulls/r6ii/flowers/799A4046.jpg",
-    "label": "799A4046",
-    "cam": "r6ii",
+    "thumb": "images/print-thumbs/White Chimney Against the Sky.jpg",
+    "full": "images/Prints/White Chimney Against the Sky.jpg",
+    "label": "White Chimney Against the Sky",
+    "cam": "7d",
+    "theme": "skies"
+  },
+  {
+    "thumb": "images/print-thumbs/7d/flowers/Crepe Myrtle in Evening Light.jpg",
+    "full": "images/Prints/7d/flowers/Crepe Myrtle in Evening Light.jpg",
+    "label": "Crepe Myrtle in Evening Light",
+    "cam": "7d",
     "theme": "flowers"
   },
   {
-    "thumb": "images/thumbs/r6ii/flowers/799A4051.jpg",
-    "full": "images/fulls/r6ii/flowers/799A4051.jpg",
-    "label": "799A4051",
-    "cam": "r6ii",
-    "theme": "flowers"
-  },
-  {
-    "thumb": "images/thumbs/r6ii/misc/799A4040.jpg",
-    "full": "images/fulls/r6ii/misc/799A4040.jpg",
-    "label": "799A4040",
-    "cam": "r6ii",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/r6ii/misc/799A4041.jpg",
-    "full": "images/fulls/r6ii/misc/799A4041.jpg",
-    "label": "799A4041",
-    "cam": "r6ii",
-    "theme": "misc"
-  },
-  {
-    "thumb": "images/thumbs/r6ii/skies/799A3978.jpg",
-    "full": "images/fulls/r6ii/skies/799A3978.jpg",
-    "label": "799A3978",
-    "cam": "r6ii",
+    "thumb": "images/print-thumbs/7d/skies/Treetops and Summer Clouds.jpg",
+    "full": "images/Prints/7d/skies/Treetops and Summer Clouds.jpg",
+    "label": "Treetops and Summer Clouds",
+    "cam": "7d",
     "theme": "skies"
   }
 ];
-const STORE_VERSES = [
-  {
-    "full": "images/fulls/r6ii/bible/799A3891 10.56.11\u202fAM.jpg",
-    "label": "Verse 1"
-  },
-  {
-    "full": "images/fulls/r6ii/bible/799A4061.jpg",
-    "label": "Verse 2"
-  },
-  {
-    "full": "images/fulls/r6ii/bible/799A4062.jpg",
-    "label": "Verse 3"
-  },
-  {
-    "full": "images/fulls/r6ii/bible/799A4064.jpg",
-    "label": "Verse 4"
-  },
-  {
-    "full": "images/fulls/r6ii/bible/799A4068-2.jpg",
-    "label": "Verse 5"
-  }
-];
+const STORE_VERSES = [];

@@ -109,8 +109,20 @@ if os.path.exists('verses.json'):
 # ---------------------------------------------------------------------------
 PRINTS_DIR = 'images/Prints'
 
-# index images/fulls by basename so a copied-and-renamed file can be traced back
-fulls_index = {}
+# Index images/fulls so a print can be traced back to its camera/theme.
+# Indexed by CONTENT HASH as well as by name: the whole point of this folder is
+# that you rename files to title them, which destroys a name-based lookup. A
+# straight copy keeps its bytes, so the hash still finds it.
+import hashlib
+def _digest(path):
+    h = hashlib.md5()
+    with open(path, 'rb') as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b''):
+            h.update(chunk)
+    return h.hexdigest()
+
+fulls_by_name = {}
+fulls_by_hash = {}
 for cam in sorted(os.listdir('images/fulls')):
     cp = os.path.join('images/fulls', cam)
     if not os.path.isdir(cp): continue
@@ -118,8 +130,15 @@ for cam in sorted(os.listdir('images/fulls')):
         tp = os.path.join(cp, theme)
         if not os.path.isdir(tp): continue
         for fn in os.listdir(tp):
-            if fn.lower().endswith('.jpg'):
-                fulls_index.setdefault(fn.lower(), (cam, theme))
+            if not fn.lower().endswith('.jpg'): continue
+            fulls_by_name.setdefault(fn.lower(), (cam, theme))
+            fulls_by_hash.setdefault(_digest(os.path.join(tp, fn)), (cam, theme))
+
+def trace(path, fn):
+    """camera/theme for a print: by content first, then by name."""
+    hit = fulls_by_hash.get(_digest(path))
+    if hit: return hit
+    return fulls_by_name.get(fn.lower(), ('', ''))
 
 def prints_entries():
     out = []
@@ -131,12 +150,12 @@ def prints_entries():
             abs_p = os.path.join(root, fn)
             rel   = os.path.relpath(abs_p, PRINTS_DIR)        # e.g. "7d/Cold Moon.jpg"
             parts = rel.split(os.sep)
+            # images/Prints/<cam>/<theme>/file.jpg -- both folder levels optional
             cam   = parts[0] if len(parts) > 1 else ''
-            theme = ''
-            if not cam:                                        # flat: trace it back
-                cam, theme = fulls_index.get(fn.lower(), ('', ''))
-            else:
-                _c, theme = fulls_index.get(fn.lower(), (cam, ''))
+            t_cam, t_theme = trace(abs_p, fn)
+            if not cam:
+                cam = t_cam                                    # flat: trace it back
+            theme = parts[1] if len(parts) > 2 else t_theme
             out.append({
                 "src":   abs_p,
                 "rel":   rel,
